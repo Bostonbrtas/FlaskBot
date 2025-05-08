@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+instance/
+.env
+
+# macOS
+.DS_Store
+
+# Flask/Uploads
+static/uploads/
+static/scans/
+static/reports/
+server/instance/
+*.xlsx
+
+# PyCharm
+.idea/
+*.iml

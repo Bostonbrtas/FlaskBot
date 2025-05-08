@@ -1,0 +1,9 @@
+aiogram>=3.0
+requests>=2.0
+flask>=2.0
+sqlalchemy>=2.0
+flask-sqlalchemy>=3.1.1
+geopy>=2.4.1
+flasksqlalchemybasemodel>=1.2.0
+pandas>=2.2.3
+openpyxl>=3.1.5

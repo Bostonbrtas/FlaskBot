@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Сотрудники</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Таблица скрыта изначально */
+    #employeesTable { display: none; }
+    /* Карточки — флекс-контейнер */
+    #employeesCards { display: flex; flex-wrap: wrap; gap: 1em; }
+    .cards-container { padding: 0; margin: 0; list-style: none; }
+  </style>
+</head>
+<body>
+  <nav class="tabs">
+    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+    <a href="{{ url_for('export_users') }}" class="button primary">📤 Выгрузить в Excel</a>
+  </nav>
+
+  <h1>Список сотрудников</h1>
+
+  <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
+    <button onclick="location.href='{{ url_for('add_user') }}'" class="button">➕ Добавить сотрудника</button>
+    <label>
+      <input type="checkbox" id="toggleView" style="margin-right:0.5em">
+      Табличный вид
+    </label>
+  </div>
+
+  <!-- Карточки -->
+  <div id="employeesCards" class="cards-container">
+    {% for u in users %}
+      <div class="card">
+        <h2>{{ u.surname }} {{ u.name }}</h2>
+        <p><strong>Telegram ID:</strong> {{ u.telegram_id }}</p>
+        <a href="{{ url_for('edit_user', user_id=u.id) }}" class="button">✏️ Редактировать</a>
+        <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="button delete">❌ Удалить</button>
+        </form>
+      </div>
+    {% endfor %}
+    {% if not users %}
+      <p>Пользователей пока нет.</p>
+    {% endif %}
+  </div>
+
+  <!-- Таблица -->
+  <table id="employeesTable" class="report-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Фамилия</th>
+        <th>Имя</th>
+        <th>Telegram ID</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.surname }}</td>
+        <td>{{ u.name }}</td>
+        <td>{{ u.telegram_id }}</td>
+        <td>
+          <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn-edit">✏️ Редактировать</a>
+          <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn-delete">❌ Удалить</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not users %}
+      <tr><td colspan="5">Пользователей пока нет.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('toggleView');
+      const cards  = document.getElementById('employeesCards');
+      const table  = document.getElementById('employeesTable');
+
+      // Восстановить выбор из localStorage
+      if (localStorage.getItem('employeesView') === 'table') {
+        toggle.checked = true;
+        cards.style.display = 'none';
+        table.style.display = 'table';
+      }
+
+      toggle.addEventListener('change', () => {
+        if (toggle.checked) {
+          cards.style.display = 'none';
+          table.style.display = 'table';
+          localStorage.setItem('employeesView', 'table');
+        } else {
+          table.style.display = 'none';
+          cards.style.display = 'flex';
+          localStorage.setItem('employeesView', 'cards');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

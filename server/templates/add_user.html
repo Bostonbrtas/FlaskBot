@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить сотрудника</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav class="tabs">
+    <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('projects') }}" class="tab {% if active_tab == 'projects' %}active{% endif %}">Проекты</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab == 'reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+</nav>
+
+<div class="form-container">
+    <h1>Добавить сотрудника</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <!-- Основные поля -->
+        <div class="form-grid">
+            <input type="text" name="telegram_id" placeholder="Telegram ID" required>
+            <input type="text" name="surname" placeholder="Фамилия" required>
+            <input type="text" name="name" placeholder="Имя" required>
+            <input type="text" name="patronymic" placeholder="Отчество">
+            <input type="date" name="birth_date" required>
+            <select name="position" required>
+                <option value="" disabled selected>Выберите должность</option>
+                {% for pos in positions %}
+                <option value="{{ pos }}">{{ pos }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="passport" placeholder="Паспорт" required>
+            <input type="text" name="inn" placeholder="ИНН" required>
+            <input type="text" name="snils" placeholder="СНИЛС" required>
+            <input type="text" name="phone" placeholder="Телефон" required>
+            <input type="text" name="reg_address" placeholder="Адрес прописки" required>
+            <input type="text" name="res_address" placeholder="Адрес проживания">
+            <input type="text" name="clothing_size" placeholder="Размер одежды">
+            <input type="text" name="shoe_size" placeholder="Размер обуви">
+            <input type="file" name="photo" accept="image/*">
+        </div>
+
+        <!-- Дополнительные поля -->
+        <h2>Дополнительные поля</h2>
+        <div id="additional-fields"></div>
+        <button type="button" onclick="addField()" class="button primary">Добавить поле</button>
+
+        <!-- Сканы -->
+        <h2>Добавить сканы</h2>
+        <div id="scan-fields"></div>
+        <button type="button" onclick="addScan()" class="button primary">Добавить скан</button>
+
+        <!-- Действия -->
+        <div class="form-actions">
+            <button type="submit" class="button primary">Сохранить</button>
+            <a href="{{ url_for('index') }}" class="button secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addField() {
+        const container = document.getElementById('additional-fields');
+        const div = document.createElement('div');
+        div.className = 'field-row';
+        div.innerHTML = `
+            <input type="text" name="field_name[]" placeholder="Название" required>
+            <input type="text" name="field_value[]" placeholder="Значение" required>
+            <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addScan() {
+        const container = document.getElementById('scan-fields');
+        const div = document.createElement('div');
+        div.className = 'field-row';
+        div.innerHTML = `
+            <input type="file" name="scan_file" accept="image/*" required>
+            <input type="text" name="scan_desc" placeholder="Описание скана" required>
+            <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+        `;
+        container.appendChild(div);
+    }
+</script>
+</body>
+</html>

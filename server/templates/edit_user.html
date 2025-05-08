@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать карточку</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav class="tabs">
+    <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('projects') }}" class="tab {% if active_tab == 'projects' %}active{% endif %}">Проекты</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab == 'reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+</nav>
+
+<div class="form-container">
+    <h1>Редактировать карточку сотрудника</h1>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_user', user_id=user.id) }}">
+        <!-- Основные поля -->
+        <div class="form-grid">
+            <input type="text" name="telegram_id" value="{{ user.telegram_id }}" required>
+            <input type="text" name="surname" value="{{ user.surname }}" required>
+            <input type="text" name="name" value="{{ user.name }}" required>
+            <input type="text" name="patronymic" value="{{ user.patronymic }}">
+            <input type="date" name="birth_date" value="{{ user.birth_date }}" required>
+            <select name="position" required>
+                {% for pos in positions %}
+                <option value="{{ pos }}" {% if user.position == pos %}selected{% endif %}>{{ pos }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="passport" value="{{ user.passport }}" required>
+            <input type="text" name="inn" value="{{ user.inn }}" required>
+            <input type="text" name="snils" value="{{ user.snils }}" required>
+            <input type="text" name="phone" value="{{ user.phone }}" required>
+            <input type="text" name="reg_address" value="{{ user.reg_address }}" required>
+            <input type="text" name="res_address" value="{{ user.res_address }}">
+            <input type="text" name="clothing_size" value="{{ user.clothing_size }}">
+            <input type="text" name="shoe_size" value="{{ user.shoe_size }}">
+        </div>
+
+        <!-- Фото -->
+        <div class="form-group">
+            <label>Фото:</label>
+            <input type="file" name="photo" accept="image/*">
+            {% if user.photo_path %}
+            <div class="current-photo">
+                <span>Текущее фото:</span>
+                <img src="{{ url_for('static', filename=user.photo_path) }}" alt="Фото сотрудника">
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Дополнительные поля -->
+        <div class="form-section">
+            <h2>Дополнительные поля</h2>
+            <div id="additional-fields">
+                {% for field in user.userfields %}
+                <div class="field-row">
+                    <input type="text" name="field_name[]" value="{{ field.field_name }}" placeholder="Название" required>
+                    <input type="text" name="field_value[]" value="{{ field.field_value }}" placeholder="Значение" required>
+                    <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addField()" class="button primary">Добавить поле</button>
+        </div>
+
+        <!-- Сканы -->
+        <h2>Добавить сканы</h2>
+        <div id="scan-fields">
+            {% for scan in user.scans %}
+            <div class="field-row" data-scan-id="{{ scan.id }}">
+                <a href="{{ url_for('static', filename=scan.scan_path) }}" target="_blank">📎</a>
+                <input type="text" name="existing_scan_desc[]" value="{{ scan.description }}" placeholder="Описание скана" required>
+                <input type="hidden" name="existing_scan_id[]" value="{{ scan.id }}">
+                <button type="button" class="remove-button" onclick="deleteScan({{ scan.id }})">✖</button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Новые сканы -->
+        <div id="new-scan-fields"></div>
+        <button type="button" onclick="addScan()" class="button primary">Добавить скан</button>
+
+        <!-- Действия -->
+        <div class="form-actions">
+            <button type="submit" class="button primary">Сохранить изменения</button>
+            <a href="{{ url_for('index') }}" class="button secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addField() {
+        const container = document.getElementById('additional-fields');
+        const fieldRow = document.createElement('div');
+        fieldRow.className = 'field-row';
+        fieldRow.innerHTML = `
+            <input type="text" name="field_name[]" placeholder="Название" required>
+            <input type="text" name="field_value[]" placeholder="Значение" required>
+            <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+        `;
+        container.appendChild(fieldRow);
+    }
+
+    function addScan() {
+        const container = document.getElementById('new-scan-fields');
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.innerHTML = `
+            <input type="file" name="scan_file" accept="image/*" required>
+            <input type="text" name="scan_desc" placeholder="Описание скана" required>
+            <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+        `;
+        container.appendChild(row);
+    }
+
+    function deleteScan(scanId) {
+        if (!confirm("Удалить этот скан?")) return;
+
+        fetch(`/delete_scan/${scanId}`, {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                const scanElem = document.querySelector(`[data-scan-id="${scanId}"]`);
+                if (scanElem) scanElem.remove();
+            } else {
+                alert("Ошибка при удалении скана");
+            }
+        });
+    }
+</script>
+</body>
+</html>

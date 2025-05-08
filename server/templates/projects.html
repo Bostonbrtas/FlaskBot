@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Проекты</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    #projectsTable { display: none; }
+    #projectsCards { display: flex; flex-wrap: wrap; gap: 1em; }
+    .cards-container { padding: 0; margin: 0; list-style: none; }
+  </style>
+</head>
+<body>
+  <nav class="tabs">
+    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+    <a href="{{ url_for('export_projects') }}" class="button primary">📥 Выгрузить в Excel</a>
+  </nav>
+
+  <h1>Список проектов</h1>
+
+  <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
+    <button onclick="location.href='{{ url_for('add_project') }}'" class="button">➕ Добавить проект</button>
+    <label>
+      <input type="checkbox" id="toggleView" style="margin-right:0.5em">
+      Табличный вид
+    </label>
+  </div>
+
+  <!-- Карточки -->
+  <div id="projectsCards" class="cards-container">
+    {% for p in projects %}
+      <div class="card">
+        <h2>{{ p.city }}, {{ p.street }}</h2>
+        <p><strong>Строение:</strong> {{ p.building }}</p>
+        <p><strong>Координаты:</strong> {{ p.latitude }}, {{ p.longitude }}</p>
+        <a href="{{ url_for('edit_project', project_id=p.id) }}" class="button">✏️ Редактировать</a>
+        <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="button delete">❌ Удалить</button>
+        </form>
+      </div>
+    {% endfor %}
+    {% if not projects %}
+      <p>Проектов пока нет.</p>
+    {% endif %}
+  </div>
+
+  <!-- Таблица -->
+  <table id="projectsTable" class="report-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Город</th><th>Улица</th><th>Строение</th>
+        <th>Широта</th><th>Долгота</th><th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in projects %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.city }}</td>
+        <td>{{ p.street }}</td>
+        <td>{{ p.building }}</td>
+        <td>{{ p.latitude }}</td>
+        <td>{{ p.longitude }}</td>
+        <td>
+          <a href="{{ url_for('edit_project', project_id=p.id) }}" class="btn-edit">✏️ Редактировать</a>
+          <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn-delete">❌ Удалить</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not projects %}
+      <tr><td colspan="7">Проектов пока нет.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('toggleView');
+      const cards  = document.getElementById('projectsCards');
+      const table  = document.getElementById('projectsTable');
+
+      if (localStorage.getItem('projectsView') === 'table') {
+        toggle.checked = true;
+        cards.style.display = 'none';
+        table.style.display = 'table';
+      }
+
+      toggle.addEventListener('change', () => {
+        if (toggle.checked) {
+          cards.style.display = 'none';
+          table.style.display = 'table';
+          localStorage.setItem('projectsView', 'table');
+        } else {
+          table.style.display = 'none';
+          cards.style.display = 'flex';
+          localStorage.setItem('projectsView', 'cards');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

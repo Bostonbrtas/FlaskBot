@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 import logging
 import asyncio
 
@@ -16,7 +17,12 @@ from models import User, Project, Report
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7219366690:AAF1hJYH3U5IrR_w3H5z3MfuOGD9XGMG7Us")
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден. Убедитесь, что он указан в файле .env")
+
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -36,7 +42,6 @@ loc_kb = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="📍 Отправить геолокацию", request_location=True)]],
     resize_keyboard=True
 )
-
 
 def reset_state(chat_id: int):
     user_states[chat_id] = {"state": None, "data": {}}
@@ -100,17 +105,28 @@ async def all_messages(message: types.Message):
             return
 
         pid = proj_map[text]
+        proj = db.session.get(Project, pid)
         user_states[chat]["data"]["project_id"] = pid
-        user_states[chat]["state"] = STATE_READY
+        user_states[chat]["data"]["ask_location"] = proj.ask_location
 
-        # Кнопка «🏁 Начать»
-        builder = ReplyKeyboardBuilder()
-        builder.add(KeyboardButton(text="🏁 Начать")).adjust(1)
-        await message.answer(
-            f"✅ Вы выбрали: <b>{text}</b>\nНажмите «🏁 Начать»",
-            parse_mode="HTML",
-            reply_markup=builder.as_markup(resize_keyboard=True)
-        )
+        if proj.ask_location:
+            user_states[chat]["state"] = STATE_READY
+            builder = ReplyKeyboardBuilder()
+            builder.add(KeyboardButton(text="🏁 Начать")).adjust(1)
+            await message.answer(
+                f"✅ Вы выбрали: <b>{text}</b>\nНажмите «🏁 Начать»",
+                parse_mode="HTML",
+                reply_markup=builder.as_markup(resize_keyboard=True)
+            )
+        else:
+            user_states[chat]["state"] = STATE_WORKING
+            builder = ReplyKeyboardBuilder()
+            builder.add(KeyboardButton(text="📝 Отчет")).adjust(1)
+            await message.answer(
+                f"✅ Вы выбрали: <b>{text}</b>\nКогда закончите работу, нажмите «📝 Отчет»",
+                parse_mode="HTML",
+                reply_markup=builder.as_markup(resize_keyboard=True)
+            )
         return
 
     # 2) «🏁 Начать»
@@ -176,10 +192,12 @@ async def all_messages(message: types.Message):
         path = os.path.join(folder, f"{photo.file_id}.jpg")
         await bot.download_file(finfo.file_path, path)
 
+        start = data.get("start_time") or datetime.now()
+
         report = Report(
             user_id=uid,
             project_id=pid,
-            start_time=data["start_time"],
+            start_time=start,
             end_time=datetime.now(),
             text_report=data["text_report"],
             photo_path=f"reports/{photo.file_id}.jpg"
@@ -201,7 +219,6 @@ async def main():
     # Создадим таблицы, если их нет
     with app.app_context():
         db.create_all()
-
     await dp.start_polling(bot)
 
 

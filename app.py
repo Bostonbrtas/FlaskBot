@@ -282,13 +282,15 @@ def add_project():
         building = request.form['building']
         latitude = float(request.form['latitude'])  # Конвертируем в число
         longitude = float(request.form['longitude'])
+        ask_location = 'ask_location' in request.form
 
         new_project = Project(
             city=city,
             street=street,
             building=building,
             latitude=latitude,  # Обязательные поля
-            longitude=longitude
+            longitude=longitude,
+            ask_location = ask_location
         )
         # ... остальной код
         db.session.add(new_project)
@@ -317,7 +319,8 @@ def edit_project(project_id):
             project.street = request.form['street']
             project.building = request.form['building']
             project.latitude = float(request.form['latitude'])  # Обновляем широту
-            project.longitude = float(request.form['longitude'])  # Обновляем долготу
+            project.longitude = float(request.form['longitude'])
+            project.ask_location = 'ask_location' in request.form # Обновляем долготу
 
             db.session.commit()
             return redirect(url_for('projects'))

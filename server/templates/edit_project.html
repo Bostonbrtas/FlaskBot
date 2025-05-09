@@ -64,6 +64,12 @@
                 class="field-input"
             >
         </div>
+        <div class="form-group">
+            <label>
+              <input type="checkbox" name="ask_location" {% if project.ask_location %}checked{% endif %}>
+              Запрашивать геолокацию при начале работы
+            </label>
+        </div>
         <button type="submit">Сохранить изменения</button>
         <a href="{{ url_for('projects') }}" class="button delete">Отмена</a>
     </form>

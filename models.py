@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-
-
 from db import db
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -51,6 +50,7 @@ class Project(db.Model):
     building  = db.Column(db.String(50), nullable=False)
     latitude  = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
+    ask_location = db.Column(db.Boolean, default=True)  # <- новое поле
 
 class Report(db.Model):
     __tablename__ = 'report'

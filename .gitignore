@@ -21,3 +21,6 @@ server/instance/
 # PyCharm
 .idea/
 *.iml
+
+server/instance/users.db
+

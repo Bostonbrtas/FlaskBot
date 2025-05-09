@@ -17,34 +17,39 @@
     <h1>Добавить проект</h1>
 
     <!-- Форма (ваш код) -->
-    <form method="POST" action="{{ url_for('add_project') }}">
-        <div class="form-group">
-            <label for="city">Город:</label>
-            <input type="text" id="city" name="city" class="form-control" required>
-        </div>
+    <form method="POST">
+      <!-- Остальные поля -->
+      <div class="form-group">
+        <label for="city">Город:</label>
+        <input type="text" name="city" required>
+      </div>
+      <div class="form-group">
+        <label for="street">Улица:</label>
+        <input type="text" name="street" required>
+      </div>
+      <div class="form-group">
+        <label for="building">Дом:</label>
+        <input type="text" name="building" required>
+      </div>
+      <div class="form-group">
+        <label for="latitude">Широта:</label>
+        <input type="text" name="latitude" required>
+      </div>
+      <div class="form-group">
+        <label for="longitude">Долгота:</label>
+        <input type="text" name="longitude" required>
+      </div>
 
-        <div class="form-group">
-            <label for="street">Улица:</label>
-            <input type="text" id="street" name="street" class="form-control" required>
-        </div>
+      <!-- Новая галочка -->
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="ask_location" checked>
+          Запрашивать геолокацию при начале работы
+        </label>
+      </div>
 
-        <div class="form-group">
-            <label for="building">Строение:</label>
-            <input type="text" id="building" name="building" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-            <label for="latitude">Широта:</label>
-            <input type="number" step="any" id="latitude" name="latitude" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-            <label for="longitude">Долгота:</label>
-            <input type="number" step="any" id="longitude" name="longitude" class="form-control" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <a href="{{ url_for('projects') }}" class="btn btn-secondary">Отмена</a>
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="{{ url_for('projects') }}" class="btn btn-secondary">Отмена</a>
     </form>
 </body>
 </html>

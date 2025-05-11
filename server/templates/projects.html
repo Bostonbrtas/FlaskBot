@@ -3,23 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <title>Проекты</title>
+  <!-- ваш главный CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    /* по умолчанию показываем карточки */
     #projectsTable { display: none; }
+    /* карточки — флекс-контейнер */
     #projectsCards { display: flex; flex-wrap: wrap; gap: 1em; }
     .cards-container { padding: 0; margin: 0; list-style: none; }
+    /* чтобы карточки были слева */
+    #projectsCards .card { flex: 0 0 30%; }
   </style>
 </head>
 <body>
+
   <nav class="tabs">
-    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users'    %}active{% endif %}">Сотрудники</a>
     <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
-    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
-    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
-    <a href="{{ url_for('export_projects') }}" class="button primary">📥 Выгрузить в Excel</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports'%}active{% endif %}">Отчёты</a>
+    <a href="{{ url_for('logout') }}"        class="button delete">Выйти</a>
+    <a href="{{ url_for('export_projects') }}" class="button primary">📤 Выгрузить проекты</a>
   </nav>
 
-  <h1>Список проектов</h1>
+  <h1>📋 Список проектов</h1>
 
   <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
     <button onclick="location.href='{{ url_for('add_project') }}'" class="button">➕ Добавить проект</button>
@@ -32,49 +38,52 @@
   <!-- Карточки -->
   <div id="projectsCards" class="cards-container">
     {% for p in projects %}
-      <div class="card">
-        <h2>{{ p.city }}, {{ p.street }}</h2>
-        <p><strong>Строение:</strong> {{ p.building }}</p>
+      <div class="card p-3">
+        <h2>{{ p.name or '(Без названия)' }}</h2>
+        <p><strong>Адрес:</strong> {{ p.address or '(не указан)' }}</p>
         <p><strong>Координаты:</strong> {{ p.latitude }}, {{ p.longitude }}</p>
+        <p>
+          <input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}>
+          Запрашивать геолокацию
+        </p>
         <a href="{{ url_for('edit_project', project_id=p.id) }}" class="button">✏️ Редактировать</a>
         <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
-          <button type="submit" class="button delete">❌ Удалить</button>
+          <button type="submit" class="button delete" onclick="return confirm('Удалить проект?')">❌ Удалить</button>
         </form>
       </div>
-    {% endfor %}
-    {% if not projects %}
+    {% else %}
       <p>Проектов пока нет.</p>
-    {% endif %}
+    {% endfor %}
   </div>
 
   <!-- Таблица -->
   <table id="projectsTable" class="report-table">
     <thead>
       <tr>
-        <th>ID</th><th>Город</th><th>Улица</th><th>Строение</th>
-        <th>Широта</th><th>Долгота</th><th>Действия</th>
+        <th>Название</th>
+        <th>Адрес</th>
+        <th>Координаты</th>
+        <th>Геолокация</th>
+        <th>Действия</th>
       </tr>
     </thead>
     <tbody>
       {% for p in projects %}
-      <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.city }}</td>
-        <td>{{ p.street }}</td>
-        <td>{{ p.building }}</td>
-        <td>{{ p.latitude }}</td>
-        <td>{{ p.longitude }}</td>
-        <td>
-          <a href="{{ url_for('edit_project', project_id=p.id) }}" class="btn-edit">✏️ Редактировать</a>
-          <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
-            <button type="submit" class="btn-delete">❌ Удалить</button>
-          </form>
-        </td>
-      </tr>
+        <tr>
+          <td>{{ p.name or '(Без названия)' }}</td>
+          <td>{{ p.address or '(не указан)' }}</td>
+          <td>{{ p.latitude }}, {{ p.longitude }}</td>
+          <td><input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}></td>
+          <td>
+            <a href="{{ url_for('edit_project', project_id=p.id) }}" class="btn-edit">✏️</a>
+            <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn-delete" onclick="return confirm('Удалить проект?')">❌</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">Проектов пока нет.</td></tr>
       {% endfor %}
-      {% if not projects %}
-      <tr><td colspan="7">Проектов пока нет.</td></tr>
-      {% endif %}
     </tbody>
   </table>
 
@@ -84,6 +93,7 @@
       const cards  = document.getElementById('projectsCards');
       const table  = document.getElementById('projectsTable');
 
+      // восстанавливаем прошлый выбор
       if (localStorage.getItem('projectsView') === 'table') {
         toggle.checked = true;
         cards.style.display = 'none';

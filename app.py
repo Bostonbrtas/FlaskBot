@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, current_app
 import os
 import logging
 from sqlalchemy.orm import joinedload
 from datetime import datetime
-from models import db, User, UserField, Project, Report, UserScan
+from models import db, User, UserField, Project, Report, UserScan, ProjectScan
 import webbrowser
 from werkzeug.utils import secure_filename
 
@@ -14,6 +14,10 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from flask import send_file
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 
 
@@ -72,6 +76,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Инициализация БД
 
 db.init_app(app)
+
+migrate = Migrate(app, db)
 
 # Создание таблиц в базе данных
 with app.app_context():
@@ -274,62 +280,115 @@ def projects():
     projects = Project.query.order_by(Project.id).all()
     return render_template('projects.html', projects=projects, active_tab='projects')
 
-@app.route('/add_project', methods=['GET', 'POST'])
+
+@app.route("/project/add", methods=["GET", "POST"])
 def add_project():
-    if request.method == 'POST':
-        city = request.form['city']
-        street = request.form['street']
-        building = request.form['building']
-        latitude = float(request.form['latitude'])  # Конвертируем в число
-        longitude = float(request.form['longitude'])
-        ask_location = 'ask_location' in request.form
+    if request.method == "POST":
+        name           = request.form["name"]
+        address        = request.form["address"]
+        responsible_id = request.form["responsible_id"]
+        ask_location   = bool(request.form.get("ask_location"))
+
+        # конвертация координат
+        try:
+            latitude  = float(request.form.get("latitude", ""))
+            longitude = float(request.form.get("longitude", ""))
+        except ValueError:
+            flash("Широта или долгота введены неверно", "danger")
+            return redirect(url_for("add_project"))
 
         new_project = Project(
-            city=city,
-            street=street,
-            building=building,
-            latitude=latitude,  # Обязательные поля
+            name=name,
+            address=address,
+            latitude=latitude,
             longitude=longitude,
-            ask_location = ask_location
+            responsible_id=responsible_id,
+            ask_location=ask_location
         )
-        # ... остальной код
         db.session.add(new_project)
         db.session.commit()
-        return redirect(url_for('projects'))
 
-    return render_template('add_project.html', active_tab='projects')
+        # сохранение сканов
+        project_id = new_project.id
+        scan_folder = os.path.join(current_app.static_folder, "scanProject", str(project_id))
+        os.makedirs(scan_folder, exist_ok=True)
 
+        for f in request.files.getlist("scans"):
+            if f.filename:
+                filename = secure_filename(f.filename)
+                fpath = os.path.join(scan_folder, filename)
+                f.save(fpath)
+                db.session.add(ProjectScan(
+                    project_id=project_id,
+                    scan_path=os.path.join("scanProject", str(project_id), filename),
+                    filename=filename
+                ))
+        db.session.commit()
+        return redirect(url_for("projects"))
 
+    users = User.query.all()
+    project = None
+    return render_template("add_project.html", users=users, project=project, active_tab='projects')
 # Роут для отображения отчетов
+from sqlalchemy.orm import joinedload
+
 @app.route('/reports')
 def show_reports():
     reports = Report.query.options(
-        joinedload(Report.user),  # Загружаем пользователя
-        joinedload(Report.project)
+        joinedload(Report.user),
+        joinedload(Report.project),
+        joinedload(Report.photos)  # ← ВОТ ЭТО добавь
     ).all()
     return render_template('reports.html', reports=reports, active_tab='reports')
-
-@app.route('/edit_project/<int:project_id>', methods=['GET', 'POST'])
+@app.route("/edit_project/<int:project_id>", methods=["GET", "POST"])
 def edit_project(project_id):
     project = Project.query.get_or_404(project_id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
+        project.name           = request.form["name"]
+        project.address        = request.form["address"]
+        project.responsible_id = request.form["responsible_id"]
+        project.ask_location   = bool(request.form.get("ask_location"))
+
+        # обновляем координаты
         try:
-            project.city = request.form['city']
-            project.street = request.form['street']
-            project.building = request.form['building']
-            project.latitude = float(request.form['latitude'])  # Обновляем широту
-            project.longitude = float(request.form['longitude'])
-            project.ask_location = 'ask_location' in request.form # Обновляем долготу
+            project.latitude  = float(request.form.get("latitude", project.latitude))
+            project.longitude = float(request.form.get("longitude", project.longitude))
+        except ValueError:
+            pass  # оставляем старые
 
-            db.session.commit()
-            return redirect(url_for('projects'))
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Ошибка при обновлении проекта: {e}")
-            return render_template('error.html', error=str(e))  # Убедитесь, что error.html существует
+        # удаление отмеченных сканов
+        for scan_id in request.form.getlist("delete_scans"):
+            scan = ProjectScan.query.get(scan_id)
+            if scan:
+                fullpath = os.path.join(current_app.static_folder, "scanProject", str(project.id), scan.filename)
+                if os.path.exists(fullpath):
+                    os.remove(fullpath)
+                db.session.delete(scan)
 
-    return render_template('edit_project.html', project=project, active_tab='projects')
+        # добавление новых сканов
+        scan_folder = os.path.join(current_app.static_folder, "scanProject", str(project.id))
+        os.makedirs(scan_folder, exist_ok=True)
+        for f in request.files.getlist("scans"):
+            if f.filename:
+                filename = secure_filename(f.filename)
+                fpath = os.path.join(scan_folder, filename)
+                f.save(fpath)
+                db.session.add(ProjectScan(
+                    project_id=project.id,
+                    scan_path=os.path.join("scanProject", str(project.id), filename),
+                    filename=filename
+                ))
+
+        db.session.commit()
+        return redirect(url_for("projects"))
+
+    users = User.query.all()
+    return render_template("edit_project.html",
+                           project=project,
+                           users=users,
+                           active_tab='projects')
+
 @app.route('/delete_project/<int:project_id>', methods=['POST'])
 def delete_project(project_id):
     project = Project.query.get(project_id)
@@ -339,20 +398,38 @@ def delete_project(project_id):
         logger.info(f"Проект с ID {project_id} удалён.")
     return redirect(url_for('projects'))
 
+@app.route('/delete_project_scan/<int:scan_id>', methods=['POST'])
+def delete_project_scan(scan_id):
+    scan = ProjectScan.query.get_or_404(scan_id)
+    project_id = scan.project_id
+
+    # Удаление файла с диска
+    scan_path = os.path.join('static', 'scanProject', str(project_id), scan.filename)
+    if os.path.exists(scan_path):
+        os.remove(scan_path)
+
+    # Удаление из БД
+    db.session.delete(scan)
+    db.session.commit()
+
+    flash("Скан успешно удалён.")
+    return redirect(url_for('edit_project', project_id=project_id))
+
 
 @app.route('/delete_report/<int:report_id>', methods=['POST'])
 def delete_report(report_id):
     try:
-        report = Report.query.get_or_404(report_id)
+        report = Report.query.options(joinedload(Report.photos)).get_or_404(report_id)
 
-        # Удаление файла фото
-        if report.photo_path:
+        # Удаление всех связанных фото
+        for photo in report.photos:
             try:
-                full_path = os.path.join(app.static_folder, report.photo_path)
+                full_path = os.path.join(app.static_folder, photo.photo_path)
                 if os.path.exists(full_path):
                     os.remove(full_path)
+                db.session.delete(photo)
             except Exception as e:
-                logging.error(f"Ошибка удаления файла: {str(e)}")
+                logging.error(f"Ошибка удаления фото: {str(e)}")
 
         db.session.delete(report)
         db.session.commit()
@@ -479,7 +556,7 @@ def delete_scan(scan_id):
 
 def open_browser():
     # Пауза, чтобы сервер успел подняться
-    webbrowser.open_new("http://127.0.0.1:5000/")
+    webbrowser.open_new("http://127.0.0.1:5001/")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)

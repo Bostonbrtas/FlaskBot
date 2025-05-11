@@ -43,28 +43,27 @@
                         <span class="deleted-user">[Удаленный пользователь]</span>
                       {% endif %}
                     </td>
-                    <td>
+                   <td>
                         {% if report.project %}
-                            {{ report.project.city }}, {{ report.project.street }}, {{ report.project.building }}
+                            {{ report.project.name }}
                         {% else %}
-                            [Объект удален]
+                            [Пользователь удален]
                         {% endif %}
-                    </td>
+                   </td>
                     <td>{{ report.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td>{{ report.end_time.strftime('%d.%m.%Y %H:%M') if report.end_time else '—' }}</td>
                     <td>{{ report.text_report or '—' }}</td>
-                    <td>
-                        {% if report.photo_path %}
-                            <a href="{{ url_for('static', filename=report.photo_path) }}" target="_blank" class="photo-link">
-                                <img src="{{ url_for('static', filename=report.photo_path) }}"
-                                     alt="Фото отчета"
-                                     class="report-photo"
-                                     onerror="this.style.display='none'">
-                            </a>
+                   <td>
+                        {% if report.photos %}
+                            {% for photo in report.photos %}
+                                <a href="{{ url_for('static', filename=photo.photo_path) }}" target="_blank" class="photo-link">
+                                    <img src="{{ url_for('static', filename=photo.photo_path) }}" alt="Фото" class="report-photo">
+                                </a>
+                            {% endfor %}
                         {% else %}
                             —
                         {% endif %}
-                    </td>
+                   </td>
                     <td>
                         <form action="{{ url_for('delete_report', report_id=report.id) }}" method="POST">
                             <button type="submit" class="button delete">Удалить</button>

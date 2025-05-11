@@ -23,6 +23,7 @@ class User(db.Model):
     photo_path   = db.Column(db.String(255), nullable=True)
     scans = db.relationship('UserScan', backref='user', cascade='all, delete-orphan')
     userfields = db.relationship('UserField', backref='user', cascade='all, delete-orphan')
+    projects = db.relationship('Project', back_populates='responsible')
 
 
 class UserField(db.Model):
@@ -42,15 +43,25 @@ class UserScan(db.Model):
     scan_path   = db.Column(db.String(255), nullable=False)   # относительный путь к статике
     description = db.Column(db.String(255))
 
+
 class Project(db.Model):
     __tablename__ = 'project'
-    id        = db.Column(db.Integer, primary_key=True)
-    city      = db.Column(db.String(100), nullable=False)
-    street    = db.Column(db.String(100), nullable=False)
-    building  = db.Column(db.String(50), nullable=False)
-    latitude  = db.Column(db.Float, nullable=False)
-    longitude = db.Column(db.Float, nullable=False)
-    ask_location = db.Column(db.Boolean, default=True)  # <- новое поле
+    id             = db.Column(db.Integer, primary_key=True)
+    name           = db.Column(db.String(255), nullable=False)
+    address        = db.Column(db.Text, nullable=False)
+    latitude       = db.Column(db.Float, nullable=False)
+    longitude      = db.Column(db.Float, nullable=False)
+    responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    ask_location   = db.Column(db.Boolean, default=True)
+
+    # Замена backref на back_populates
+    responsible = db.relationship('User', back_populates='projects')
+    scans       = db.relationship(
+        'ProjectScan',
+        back_populates='project',
+        cascade='all, delete-orphan',
+        lazy='dynamic'
+    )
 
 class Report(db.Model):
     __tablename__ = 'report'
@@ -60,6 +71,20 @@ class Report(db.Model):
     start_time = db.Column(db.DateTime, nullable=False)
     end_time   = db.Column(db.DateTime)
     text_report= db.Column(db.Text)
-    photo_path = db.Column(db.String(255))
     user       = db.relationship('User',   backref='reports', lazy='joined')
     project    = db.relationship('Project',backref='reports', lazy='joined')
+    photos = db.relationship('ReportPhoto', back_populates='report', cascade='all, delete-orphan')
+
+class ProjectScan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    scan_path = db.Column(db.String(255), nullable=False)
+    filename = db.Column(db.String(255))  # ← ДОБАВЬ ЭТУ СТРОКУ, если её нет
+    project = db.relationship("Project", back_populates="scans")
+
+class ReportPhoto(db.Model):
+    __tablename__ = 'report_photo'
+    id         = db.Column(db.Integer, primary_key=True)
+    report_id  = db.Column(db.Integer, db.ForeignKey('report.id', ondelete='CASCADE'), nullable=False)
+    photo_path = db.Column(db.String(255), nullable=False)
+    report     = db.relationship('Report', back_populates='photos')

@@ -1,55 +1,98 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Добавить проект</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Добавить проект</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="tabs">
-        <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'users' %}active{% endif %}">Сотрудники</a>
-        <a href="{{ url_for('projects') }}" class="tab {% if active_tab == 'projects' %}active{% endif %}">Проекты</a>
-        <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab == 'reports' %}active{% endif %}">Отчеты</a>
-        <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
-    </nav>
+  <!-- Навигация -->
+  <nav class="tabs">
+    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+  </nav>
 
-    <h1>Добавить проект</h1>
-
-    <!-- Форма (ваш код) -->
-    <form method="POST">
-      <!-- Остальные поля -->
+  <!-- Форма -->
+  <div class="form-container">
+    <h1>➕ Добавить проект</h1>
+    <form method="POST" enctype="multipart/form-data">
+      <!-- Основные поля -->
       <div class="form-group">
-        <label for="city">Город:</label>
-        <input type="text" name="city" required>
+        <label for="name">Название проекта</label>
+        <input type="text" id="name" name="name" class="input-field" required>
       </div>
       <div class="form-group">
-        <label for="street">Улица:</label>
-        <input type="text" name="street" required>
+        <label for="address">Адрес</label>
+        <input type="text" id="address" name="address" class="input-field" required>
       </div>
       <div class="form-group">
-        <label for="building">Дом:</label>
-        <input type="text" name="building" required>
+        <label for="latitude">Широта</label>
+        <input type="number" step="any" id="latitude" name="latitude" class="input-field" value="{{ project.latitude }}" required>
       </div>
       <div class="form-group">
-        <label for="latitude">Широта:</label>
-        <input type="text" name="latitude" required>
+        <label for="longitude">Долгота</label>
+        <input type="number" step="any" id="longitude" name="longitude" class="input-field" value="{{ project.longitude }}" required>
       </div>
       <div class="form-group">
-        <label for="longitude">Долгота:</label>
-        <input type="text" name="longitude" required>
-      </div>
-
-      <!-- Новая галочка -->
-      <div class="form-group">
-        <label>
-          <input type="checkbox" name="ask_location" checked>
-          Запрашивать геолокацию при начале работы
-        </label>
+        <label for="responsible_id">Ответственный</label>
+        <select id="responsible_id" name="responsible_id" class="input-field" required>
+          {% for u in users %}
+            <option value="{{ u.id }}">{{ u.surname }} {{ u.name }}</option>
+          {% endfor %}
+        </select>
       </div>
 
-      <button type="submit" class="btn btn-primary">Сохранить</button>
-      <a href="{{ url_for('projects') }}" class="btn btn-secondary">Отмена</a>
+      <!-- Сканы -->
+      <div class="form-group">
+        <label>Сканы</label>
+        <div id="scans-list"></div>
+        <button type="button" id="add-scan-btn" class="button secondary">Добавить скан</button>
+      </div>
+
+      <!-- Запрос геопозиции -->
+      <div class="form-group">
+        <label><input type="checkbox" name="ask_location" class="input-checkbox"> Запрашивать геопозицию</label>
+      </div>
+
+      <!-- Действия -->
+      <div class="form-actions">
+        <button type="submit" class="button primary">Сохранить</button>
+        <a href="{{ url_for('projects') }}" class="button">Отмена</a>
+      </div>
     </form>
+  </div>
+
+  <script>
+    // Динамика сканов
+    const scansList = document.getElementById('scans-list');
+    document.getElementById('add-scan-btn').addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.name = 'scans';
+      input.accept = '.png,.jpg,.jpeg,.gif,.pdf';
+      input.style.display = 'none';
+      input.onchange = () => {
+        if (!input.files.length) return;
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.appendChild(input);
+        const name = document.createElement('span');
+        name.textContent = input.files[0].name;
+        name.className = 'file-name';
+        row.appendChild(name);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'remove-btn';
+        btn.textContent = '×';
+        btn.onclick = () => scansList.removeChild(row);
+        row.appendChild(btn);
+        scansList.appendChild(row);
+      };
+      document.body.appendChild(input);
+      input.click();
+    });
+  </script>
 </body>
 </html>

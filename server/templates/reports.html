@@ -54,14 +54,10 @@
                     <td>{{ report.end_time.strftime('%d.%m.%Y %H:%M') if report.end_time else '—' }}</td>
                     <td>{{ report.text_report or '—' }}</td>
                    <td>
-                        {% if report.photos %}
-                            {% for photo in report.photos %}
-                                <a href="{{ url_for('static', filename=photo.photo_path) }}" target="_blank" class="photo-link">
-                                    <img src="{{ url_for('static', filename=photo.photo_path) }}" alt="Фото" class="report-photo">
-                                </a>
-                            {% endfor %}
+                        {% if report.photo_link %}
+                          <a href="{{ report.photo_link }}" target="_blank">📁 Смотреть фото на Яндекс.Диске</a>
                         {% else %}
-                            —
+                          —
                         {% endif %}
                    </td>
                     <td>

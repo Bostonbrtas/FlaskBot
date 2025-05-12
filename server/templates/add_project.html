@@ -35,6 +35,7 @@
         <label for="longitude">Долгота</label>
         <input type="number" step="any" id="longitude" name="longitude" class="input-field" value="{{ project.longitude }}" required>
       </div>
+        <!-- Ответственный -->
       <div class="form-group">
         <label for="responsible_id">Ответственный</label>
         <select id="responsible_id" name="responsible_id" class="input-field" required>
@@ -44,16 +45,23 @@
         </select>
       </div>
 
-      <!-- Сканы -->
-      <div class="form-group">
-        <label>Сканы</label>
-        <div id="scans-list"></div>
-        <button type="button" id="add-scan-btn" class="button secondary">Добавить скан</button>
+     <!-- Сканы -->
+     <!-- Блок добавления сканов -->
+     <!-- Сканы -->
+     <!-- Блок сканов с центром -->
+      <div class="scan-wrapper">
+        <h2>Добавить сканы</h2>
+        <button type="button" id="add-scan-btn" class="button primary">Добавить скан</button>
       </div>
 
-      <!-- Запрос геопозиции -->
-      <div class="form-group">
-        <label><input type="checkbox" name="ask_location" class="input-checkbox"> Запрашивать геопозицию</label>
+      <!-- Контейнер для добавленных сканов -->
+      <div id="scans-list" class="mt-3"></div>
+<!-- Запрос геопозиции -->
+      <div class="geo-wrapper">
+        <label class="geo-label">
+          <input type="checkbox" name="ask_location" class="input-checkbox">
+          Запрашивать геопозицию
+        </label>
       </div>
 
       <!-- Действия -->
@@ -65,33 +73,35 @@
   </div>
 
   <script>
-    // Динамика сканов
     const scansList = document.getElementById('scans-list');
     document.getElementById('add-scan-btn').addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.name = 'scans';
-      input.accept = '.png,.jpg,.jpeg,.gif,.pdf';
-      input.style.display = 'none';
-      input.onchange = () => {
-        if (!input.files.length) return;
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'scans';
+      fileInput.accept = '.png,.jpg,.jpeg,.gif,.pdf';
+      fileInput.style.display = 'none';
+      fileInput.addEventListener('change', () => {
+        if (!fileInput.files.length) return;
         const row = document.createElement('div');
         row.className = 'field-row';
-        row.appendChild(input);
-        const name = document.createElement('span');
-        name.textContent = input.files[0].name;
-        name.className = 'file-name';
-        row.appendChild(name);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'remove-btn';
-        btn.textContent = '×';
-        btn.onclick = () => scansList.removeChild(row);
-        row.appendChild(btn);
+        row.appendChild(fileInput);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'file-upload-name';
+        nameSpan.textContent = fileInput.files[0].name;
+        row.appendChild(nameSpan);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-button';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => scansList.removeChild(row));
+        row.appendChild(removeBtn);
+
         scansList.appendChild(row);
-      };
-      document.body.appendChild(input);
-      input.click();
+      });
+      document.body.appendChild(fileInput);
+      fileInput.click();
     });
   </script>
 </body>

@@ -541,7 +541,7 @@ def export_reports():
 
 @app.route('/delete_scan/<int:scan_id>', methods=['POST'])
 def delete_scan(scan_id):
-    scan = UserScan.query.get_or_404(scan_id)
+    scan = ProjectScan.query.get_or_404(scan_id)
     try:
         file_path = os.path.join(app.static_folder, scan.scan_path)
         if os.path.exists(file_path):

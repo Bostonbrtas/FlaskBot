@@ -45,35 +45,29 @@
       </div>
 
       <!-- Существующие сканы с чекбоксом удаления -->
-      <div class="form-group">
-        <label>Текущие сканы</label>
-        <div id="existing-scans">
-          {% for scan in project.scans %}
-          <div class="field-row">
+     <!-- Сканы -->
+      <div class="scan-wrapper">
+        <h2>Добавить сканы</h2>
+        <button type="button" id="add-scan-btn" class="button primary">Добавить скан</button>
+      </div>
+
+      <!-- Добавленные сканы -->
+      <div id="scans-list" class="mt-3">
+        {% for scan in project.scans %}
+          <div class="field-row" data-scan-id="{{ scan.id }}">
             <span class="file-upload-name">{{ scan.filename }}</span>
-            <label style="margin-left:auto;">
-              <input type="checkbox" name="delete_scans" value="{{ scan.id }}"> удалить
-            </label>
+            <button type="button" class="remove-button js-delete-scan" data-scan-id="{{ scan.id }}">×</button>
           </div>
-          {% endfor %}
-        </div>
+        {% endfor %}
       </div>
 
-      <!-- Динамическое добавление новых сканов -->
-      <div class="form-group">
-        <label>Добавить новые сканы</label>
-        <div id="scans-list"></div>
-        <button type="button" id="add-scan-btn" class="button secondary">Добавить скан</button>
-      </div>
-
-      <!-- Галочка запроса геопозиции -->
-      <div class="form-group">
-        <label><input type="checkbox" id="ask_location" name="ask_location"
-          {% if project.ask_location %}checked{% endif %}>
+      <!-- Геопозиция -->
+      <div class="geo-wrapper">
+        <label class="geo-label">
+          <input type="checkbox" name="ask_location" class="input-checkbox" {% if project.ask_location %}checked{% endif %}>
           Запрашивать геопозицию
         </label>
       </div>
-
       <!-- Кнопки действий -->
       <div class="form-actions">
         <button type="submit" class="button primary">Сохранить</button>
@@ -114,6 +108,29 @@
       document.body.appendChild(fileInput);
       fileInput.click();
     });
+
+      document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.js-delete-scan').forEach(button => {
+      button.addEventListener('click', () => {
+        const scanId = button.dataset.scanId;
+        fetch(`/delete_scan/${scanId}`, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }).then(response => {
+          if (response.ok) {
+            const row = document.querySelector(`.field-row[data-scan-id="${scanId}"]`);
+            if (row) row.remove();
+          } else {
+            alert("Ошибка при удалении скана");
+          }
+        }).catch(() => {
+          alert("Ошибка соединения с сервером");
+        });
+      });
+    });
+  });
   </script>
 </body>
 </html>

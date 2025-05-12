@@ -5,12 +5,14 @@ __pycache__/
 *.pyd
 *.sqlite3
 instance/
+.db
 .env
 
 # macOS
 .DS_Store
 
 # Flask/Uploads
+static/scanProject/
 static/uploads/
 static/scans/
 static/reports/

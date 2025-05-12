@@ -71,6 +71,7 @@ class Report(db.Model):
     start_time = db.Column(db.DateTime, nullable=False)
     end_time   = db.Column(db.DateTime)
     text_report= db.Column(db.Text)
+    photo_link = db.Column(db.String, nullable=True)
     user       = db.relationship('User',   backref='reports', lazy='joined')
     project    = db.relationship('Project',backref='reports', lazy='joined')
     photos = db.relationship('ReportPhoto', back_populates='report', cascade='all, delete-orphan')

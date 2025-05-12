@@ -47,15 +47,8 @@ loc_kb = ReplyKeyboardMarkup(
 )
 
 
-def save_photo(telegram_id, file_id):
-    folder = os.path.join("static", "reports", str(telegram_id))
-    os.makedirs(folder, exist_ok=True)
-    path = os.path.join(folder, f"{file_id}.jpg")
-    rel = f"reports/{telegram_id}/{file_id}.jpg"
-    return path, rel
-
 def upload_to_yadisk(project_name, telegram_id, file_bytes, filename):
-    token = "y0__xDXkcK4BxjM1Tcg69vUjBNnvu7cyVUW4PH7mAH1QsdPmsYwAw"
+    token = os.getenv("YADISK_TOKEN")
     headers = {"Authorization": f"OAuth {token}"}
 
     safe_project_name = project_name.replace(" ", "_").replace("/", "_")
@@ -82,11 +75,25 @@ def upload_to_yadisk(project_name, telegram_id, file_bytes, filename):
 
     return f"https://disk.yandex.ru/client/disk/{user_folder}"
 
+
 def fix_auto_report_if_needed(chat):
     data = user_states.get(chat, {}).get("data", {})
     if data.get("start_time") and data.get("project_id"):
+        user = db.session.query(User).filter_by(telegram_id=str(chat)).first()
+        if not user:
+            return
+
+        existing = db.session.query(Report).filter_by(
+            user_id=user.id,
+            project_id=data["project_id"],
+            start_time=data["start_time"]
+        ).first()
+
+        if existing:
+            return
+
         report = Report(
-            user_id=db.session.query(User).filter_by(telegram_id=str(chat)).first().id,
+            user_id=user.id,
             project_id=data["project_id"],
             start_time=data["start_time"],
             end_time=datetime.now(),
@@ -101,7 +108,6 @@ def reset_state(chat):
     fix_auto_report_if_needed(chat)
     if chat in user_states:
         del user_states[chat]
-
 
 
 @dp.message(Command("start"))
@@ -151,7 +157,7 @@ async def AllMessage(message: types.Message):
                                  reply_markup=ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="🏁 Начать")]],
                                                                   resize_keyboard=True))
         else:
-            data["start_time"] = datetime.now()  # 👈 фиксируем начало сразу
+            data["start_time"] = datetime.now()  # ✅ фиксируем сразу для проектов без гео
             user_states[chat]["state"] = STATE_WORKING
             await message.answer("✅ Вы выбрали проект. Нажмите 📝 Отчет в конце.",
                                  reply_markup=ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="📝 Отчет")]],
@@ -159,6 +165,7 @@ async def AllMessage(message: types.Message):
         return
 
     if state == STATE_READY and text == "🏁 Начать":
+        data["start_time"] = datetime.now()  # ✅ фиксируем только здесь
         proj = db.session.get(Project, data["project_id"])
         data["target_coords"] = (proj.latitude, proj.longitude)
         user_states[chat]["state"] = STATE_WAIT_LOC
@@ -170,7 +177,6 @@ async def AllMessage(message: types.Message):
         current = (message.location.latitude, message.location.longitude)
         dist = geodesic(target, current).meters
         if dist <= 250:
-            data["start_time"] = datetime.now()
             user_states[chat]["state"] = STATE_WORKING
             await message.answer("✅ Вы на месте! Нажмите 📝 Отчет в конце.", reply_markup=ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = "📝 Отчет")]], resize_keyboard=True))
         else:
@@ -209,7 +215,6 @@ async def AllMessage(message: types.Message):
         filename = f"{photo.file_id}.jpg"
         remote_url = upload_to_yadisk(project.name, telegram_id, file_bytes, filename)
 
-        # просто сохраняем путь для добавления позже
         data.setdefault("uploaded_photos", []).append(f"{project.name}/{telegram_id}/{filename}")
 
         await message.answer(f"📷 Фото загружено. Всего: {len(data['uploaded_photos'])}")
@@ -233,20 +238,22 @@ async def AllMessage(message: types.Message):
         db.session.add(report)
         db.session.flush()
 
-        # теперь можно привязать фото
         for path in data.get("uploaded_photos", []):
             db.session.add(ReportPhoto(report_id=report.id, photo_path=path))
 
         db.session.commit()
+        user_states[chat]["data"].pop("start_time", None)
         await message.answer("✅ Отчет сохранен!", reply_markup=ReplyKeyboardRemove())
         reset_state(chat)
         return
 
-    if state == STATE_WAIT_PHOTOS and text:
-        await message.answer("📸 Пожалуйста, отправьте фото или нажмите '✅ Закончить отправку'.")
+    if state == STATE_WAIT_PHOTOS and message.text:
+        await message.answer("📸 Отправьте фотографии или нажмите '✅ Закончить отправку'.")
         return
 
+        # Финальная защита — неизвестная команда
     await message.answer("❌ Неизвестная команда. Нажмите /start")
+
 
 def start():
     import asyncio

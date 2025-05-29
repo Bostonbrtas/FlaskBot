@@ -6,12 +6,30 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <nav class="tabs">
-        <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'users' %}active{% endif %}">Сотрудники</a>
-        <a href="{{ url_for('projects') }}" class="tab {% if active_tab == 'projects' %}active{% endif %}">Проекты</a>
-        <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab == 'reports' %}active{% endif %}">Отчеты</a>
+   <nav class="tabs">
+        <a href="{% if archive %}{{ url_for('archive_users') }}{% else %}{{ url_for('index') }}{% endif %}"
+           class="tab {% if active_tab=='users'    %}active{% endif %}">Сотрудники</a>
+        <a href="{% if archive %}{{ url_for('archive_projects') }}{% else %}{{ url_for('projects') }}{% endif %}"
+           class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+        <a href="{% if archive %}{{ url_for('archive_reports') }}{% else %}{{ url_for('show_reports') }}{% endif %}"
+           class="tab {% if active_tab=='reports'  %}active{% endif %}">Отчеты</a>
+
         <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
-        <a href="{{ url_for('export_reports') }}" class="button primary">📥 Выгрузить в Excel</a>
+
+        <div class="header-actions">
+          {% if not archive %}
+            <a href="{{ url_for('export_' ~ active_tab) }}" class="button primary">📤 Выгрузить в Excel</a>
+            <a href="{{ url_for('archive_' ~ active_tab) }}" class="button secondary">📦 Архив</a>
+          {% else %}
+            {% if active_tab=='users' %}
+              <a href="{{ url_for('index') }}" class="button primary">← Назад к Сотрудники</a>
+            {% elif active_tab=='projects' %}
+              <a href="{{ url_for('projects') }}" class="button primary">← Назад к Проекты</a>
+            {% elif active_tab=='reports' %}
+              <a href="{{ url_for('show_reports') }}" class="button primary">← Назад к Отчеты</a>
+            {% endif %}
+          {% endif %}
+        </div>
     </nav>
 
     <div class="container">
@@ -53,17 +71,23 @@
                     <td>{{ report.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td>{{ report.end_time.strftime('%d.%m.%Y %H:%M') if report.end_time else '—' }}</td>
                     <td>{{ report.text_report or '—' }}</td>
-                   <td>
-                        {% if report.photo_link %}
-                          <a href="{{ report.photo_link }}" target="_blank">📁 Смотреть фото на Яндекс.Диске</a>
+                  <td>
+                        {% if report.photo_link and report.photo_link not in ['None', '', None] %}
+                            <a href="{{ report.photo_link }}" target="_blank">📁 Смотреть фото на Яндекс.Диске</a>
                         {% else %}
-                          —
+                            <span class="no-photo">—</span>
                         {% endif %}
                    </td>
                     <td>
-                        <form action="{{ url_for('delete_report', report_id=report.id) }}" method="POST">
-                            <button type="submit" class="button delete">Удалить</button>
-                        </form>
+                      <a href="{{ url_for('edit_report', report_id=report.id) }}" class="button">✏️</a>
+                      <form action="{{ url_for('toggle_archive_report', report_id=report.id) }}"
+                            method="POST" style="display:inline;">
+                        <button type="submit" class="button secondary">📦 Архив</button>
+                      </form>
+                      <form action="{{ url_for('delete_report', report_id=report.id) }}"
+                            method="POST" style="display:inline;">
+                        <button type="submit" class="button delete">Удалить</button>
+                      </form>
                     </td>
                 </tr>
                 {% endfor %}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="tabs">
+    <a href="{% if archive %}{{ url_for('archive_users') }}{% else %}{{ url_for('index') }}{% endif %}"
+       class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{% if archive %}{{ url_for('archive_projects') }}{% else %}{{ url_for('projects') }}{% endif %}"
+       class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{% if archive %}{{ url_for('archive_reports') }}{% else %}{{ url_for('show_reports') }}{% endif %}"
+       class="tab {% if active_tab=='reports' %}active{% endif %}">Отчёты</a>
+
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+
+    <div class="header-actions">
+      {% if not archive %}
+        <a href="{{ url_for('export_' ~ active_tab) }}" class="button primary">📤 Выгрузить в Excel</a>
+        <a href="{{ url_for('archive_' ~ active_tab) }}" class="button secondary">📦 Архив</a>
+      {% else %}
+        {% if active_tab == 'users' %}
+          <a href="{{ url_for('index') }}" class="button primary">← Назад к Сотрудники</a>
+        {% elif active_tab == 'projects' %}
+          <a href="{{ url_for('projects') }}" class="button primary">← Назад к Проекты</a>
+        {% elif active_tab == 'reports' %}
+          <a href="{{ url_for('show_reports') }}" class="button primary">← Назад к Отчёты</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>{% block page_header %}{% endblock %}</h1>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

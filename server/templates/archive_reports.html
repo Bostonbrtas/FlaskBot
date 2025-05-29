@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Архив отчётов{% endblock %}
+{% block page_header %}Архив отчётов{% endblock %}
+
+{% block content %}
+  {% if reports %}
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Telegram ID</th>
+          <th>Сотрудник</th>
+          <th>Проект</th>
+          <th>Начало</th>
+          <th>Конец</th>
+          <th>Текст отчёта</th>
+          <th>Фото</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td>{{ r.user.telegram_id if r.user else '—' }}</td>
+          <td>{{ r.user.surname }} {{ r.user.name }}</td>
+          <td>{{ r.project.name if r.project else '—' }}</td>
+          <td>{{ r.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
+          <td>{{ r.end_time.strftime('%d.%m.%Y %H:%M') if r.end_time else '—' }}</td>
+          <td>{{ r.text_report or '—' }}</td>
+          <td>
+            {% if r.photo_link %}
+              <a href="{{ r.photo_link }}" target="_blank">Смотреть фото</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            <form action="{{ url_for('toggle_archive_report', report_id=r.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="button primary">↩️ Разархивировать</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Архив отчётов пуст.</p>
+  {% endif %}
+{% endblock %}

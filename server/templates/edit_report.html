@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактировать отчёт{% endblock %}
+{% block page_header %}Редактировать отчёт{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <div class="form-group">
+      <label for="project_id">Объект</label>
+      <select id="project_id" name="project_id" class="form-control">
+        {% for p in projects %}
+          <option value="{{ p.id }}" {% if p.id == report.project_id %}selected{% endif %}>
+            {{ p.name }}, {{ p.address }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="start_time">Начало (дд.мм.гггг, чч:мм)</label>
+      <input type="text"
+             id="start_time"
+             name="start_time"
+             class="form-control"
+             placeholder="дд.мм.гггг, чч:мм"
+             value="{{ report.start_time.strftime('%d.%m.%Y, %H:%M') }}">
+    </div>
+
+    <div class="form-group">
+      <label for="end_time">Конец (дд.мм.гггг, чч:мм)</label>
+      <input type="text"
+             id="end_time"
+             name="end_time"
+             class="form-control"
+             placeholder="дд.мм.гггг, чч:мм"
+             value="{% if report.end_time %}{{ report.end_time.strftime('%d.%m.%Y, %H:%M') }}{% endif %}">
+    </div>
+
+    <div class="form-group">
+      <label for="text_report">Текст отчёта</label>
+      <textarea id="text_report"
+                name="text_report"
+                class="form-control"
+                rows="4">{{ report.text_report }}</textarea>
+    </div>
+
+    <div class="form-actions" style="margin-top:1em;">
+      <button type="submit" class="button primary">Сохранить</button>
+      <a href="{{ url_for('show_reports') }}" class="button">Отмена</a>
+    </div>
+  </form>
+{% endblock %}

@@ -3,103 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <title>Проекты</title>
-  <!-- ваш главный CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* по умолчанию показываем карточки */
+    /* По умолчанию показываем карточки */
     #projectsTable { display: none; }
-    /* карточки — флекс-контейнер */
+    /* Карточки — флекс-контейнер */
     #projectsCards { display: flex; flex-wrap: wrap; gap: 1em; }
     .cards-container { padding: 0; margin: 0; list-style: none; }
-    /* чтобы карточки были слева */
     #projectsCards .card { flex: 0 0 30%; }
   </style>
 </head>
 <body>
-
   <nav class="tabs">
-    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users'    %}active{% endif %}">Сотрудники</a>
-    <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
-    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports'%}active{% endif %}">Отчёты</a>
-    <a href="{{ url_for('logout') }}"        class="button delete">Выйти</a>
-    <a href="{{ url_for('export_projects') }}" class="button primary">📤 Выгрузить проекты</a>
+    <a href="{% if archive %}{{ url_for('archive_users') }}{% else %}{{ url_for('index') }}{% endif %}" class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
+    <a href="{% if archive %}{{ url_for('archive_projects') }}{% else %}{{ url_for('projects') }}{% endif %}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{% if archive %}{{ url_for('archive_reports') }}{% else %}{{ url_for('show_reports') }}{% endif %}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
+    <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
+    <div class="header-actions">
+      {% if not archive %}
+        <a href="{{ url_for('export_' ~ active_tab) }}" class="button primary">📤 Выгрузить проекты</a>
+        <a href="{{ url_for('archive_' ~ active_tab) }}" class="button secondary">📦 Архив</a>
+      {% else %}
+        <a href="{{ url_for('projects') }}" class="button primary">← Назад к Проекты</a>
+      {% endif %}
+    </div>
   </nav>
 
-  <h1>📋 Список проектов</h1>
+  <div class="container">
+    <h1>📋 Список проектов</h1>
 
-  <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
-    <button onclick="location.href='{{ url_for('add_project') }}'" class="button">➕ Добавить проект</button>
-    <label>
-      <input type="checkbox" id="toggleView" style="margin-right:0.5em">
-      Табличный вид
-    </label>
-  </div>
+    <form method="get" action="{{ url_for('projects') }}" style="margin-bottom:1em;">
+      <label for="sortSelect">Сортировать по:</label>
+      <select name="sort" id="sortSelect" onchange="this.form.submit()">
+        <option value="alpha"        {% if sort=='alpha'        %}selected{% endif %}>Алфавит</option>
+        <option value="address"      {% if sort=='address'      %}selected{% endif %}>Адрес</option>
+        <option value="latitude"     {% if sort=='latitude'     %}selected{% endif %}>Широта</option>
+        <option value="longitude"    {% if sort=='longitude'    %}selected{% endif %}>Долгота</option>
+        <option value="ask_location" {% if sort=='ask_location' %}selected{% endif %}>Геолокация</option>
+      </select>
+      <input type="hidden" name="dir" value="{{ dir }}">
+    </form>
 
-  <!-- Карточки -->
-  <div id="projectsCards" class="cards-container">
-    {% for p in projects %}
-      <div class="card p-3">
-        <h2>{{ p.name or '(Без названия)' }}</h2>
-        <p><strong>Адрес:</strong> {{ p.address or '(не указан)' }}</p>
-        <p><strong>Координаты:</strong> {{ p.latitude }}, {{ p.longitude }}</p>
-        <p>
-          <input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}>
-          Запрашивать геолокацию
-        </p>
-        <a href="{{ url_for('edit_project', project_id=p.id) }}" class="button">✏️ Редактировать</a>
-        <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
-          <button type="submit" class="button delete" onclick="return confirm('Удалить проект?')">❌ Удалить</button>
-        </form>
-      </div>
-    {% else %}
-      <p>Проектов пока нет.</p>
-    {% endfor %}
-  </div>
+    <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
+      <button onclick="location.href='{{ url_for('add_project') }}'" class="button">➕ Добавить проект</button>
+      <label><input type="checkbox" id="toggleView" style="margin-right:0.5em"> Табличный вид</label>
+    </div>
 
-  <!-- Таблица -->
-  <table id="projectsTable" class="report-table">
+    <!-- Карточки -->
+    <div id="projectsCards" class="cards-container">
+      {% for p in projects %}
+        <div class="card">
+          <h2>{{ p.name or '(Без названия)' }}</h2>
+          <p><strong>Адрес:</strong> {{ p.address or '(не указан)' }}</p>
+          <p>
+            <input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}>
+            Запрашивать геолокацию
+          </p>
+          <a href="{{ url_for('edit_project', project_id=p.id) }}" class="button">✏️ Редактировать</a>
+          <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="button delete" onclick="return confirm('Удалить проект?')">❌ Удалить</button>
+          </form>
+          <form action="{{ url_for('toggle_archive_project', project_id=p.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="button secondary">📦 Архив</button>
+          </form>
+        </div>
+      {% else %}
+        <p>Проектов пока нет.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Таблица -->
+    <table id="projectsTable" class="report-table">
     <thead>
       <tr>
         <th>Название</th>
         <th>Адрес</th>
-        <th>Координаты</th>
+        <th>Широта</th>
+        <th>Долгота</th>
         <th>Геолокация</th>
         <th>Действия</th>
       </tr>
     </thead>
-    <tbody>
-      {% for p in projects %}
-        <tr>
-          <td>{{ p.name or '(Без названия)' }}</td>
-          <td>{{ p.address or '(не указан)' }}</td>
-          <td>{{ p.latitude }}, {{ p.longitude }}</td>
-          <td><input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}></td>
-          <td>
-            <a href="{{ url_for('edit_project', project_id=p.id) }}" class="btn-edit">✏️</a>
-            <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
-              <button type="submit" class="btn-delete" onclick="return confirm('Удалить проект?')">❌</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}
-        <tr><td colspan="5">Проектов пока нет.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+      <tbody>
+        {% for p in projects %}
+          <tr>
+            <td>{{ p.name or '(Без названия)' }}</td>
+            <td>{{ p.address or '(не указан)' }}</td>
+            <td>{{ p.latitude }}</td>
+            <td>{{ p.longitude }}</td>
+            <td><input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}></td>
+            <td>
+              <a href="{{ url_for('edit_project',   project_id=p.id) }}" class="btn-edit">✏️</a>
+              <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn-delete" onclick="return confirm('Удалить проект?')">❌</button>
+              </form>
+              <form action="{{ url_for('toggle_archive_project', project_id=p.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn-archive">📦</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.getElementById('toggleView');
       const cards  = document.getElementById('projectsCards');
       const table  = document.getElementById('projectsTable');
-
-      // восстанавливаем прошлый выбор
       if (localStorage.getItem('projectsView') === 'table') {
         toggle.checked = true;
         cards.style.display = 'none';
         table.style.display = 'table';
       }
-
       toggle.addEventListener('change', () => {
         if (toggle.checked) {
           cards.style.display = 'none';

@@ -13,42 +13,73 @@
     <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
 </nav>
 
+
 <div class="form-container">
     <h1>Редактировать карточку сотрудника</h1>
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_user', user_id=user.id) }}">
-        <!-- Основные поля -->
         <div class="form-grid">
-            <input type="text" name="telegram_id" value="{{ user.telegram_id }}" required>
-            <input type="text" name="surname" value="{{ user.surname }}" required>
-            <input type="text" name="name" value="{{ user.name }}" required>
-            <input type="text" name="patronymic" value="{{ user.patronymic }}">
-            <input type="date" name="birth_date" value="{{ user.birth_date }}" required>
-            <select name="position" required>
-                {% for pos in positions %}
-                <option value="{{ pos }}" {% if user.position == pos %}selected{% endif %}>{{ pos }}</option>
-                {% endfor %}
-            </select>
-            <input type="text" name="passport" value="{{ user.passport }}" required>
-            <input type="text" name="inn" value="{{ user.inn }}" required>
-            <input type="text" name="snils" value="{{ user.snils }}" required>
-            <input type="text" name="phone" value="{{ user.phone }}" required>
-            <input type="text" name="reg_address" value="{{ user.reg_address }}" required>
-            <input type="text" name="res_address" value="{{ user.res_address }}">
-            <input type="text" name="clothing_size" value="{{ user.clothing_size }}">
-            <input type="text" name="shoe_size" value="{{ user.shoe_size }}">
-        </div>
+            <label for="telegram_id">Telegram ID</label>
+            <input id="telegram_id" type="text" name="telegram_id" value="{{ user.telegram_id }}" required>
+
+
+        <label for="surname">Фамилия</label>
+        <input id="surname" type="text" name="surname" value="{{ user.surname }}" required>
+
+        <label for="name">Имя</label>
+        <input id="name" type="text" name="name" value="{{ user.name }}" required>
+
+        <label for="patronymic">Отчество</label>
+        <input id="patronymic" type="text" name="patronymic" value="{{ user.patronymic or '' }}">
+
+        <label for="birth_date">Дата рождения</label>
+        <input id="birth_date" type="text" name="birth_date" placeholder="дд.мм.гггг" value="{{ user.birth_date }}" required>
+
+        <label for="position">Должность</label>
+        <select id="position" name="position" required>
+            <option value="" disabled>-- выберите --</option>
+            {% for pos in positions %}
+            <option value="{{ pos }}" {% if user.position == pos %}selected{% endif %}>{{ pos }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="passport">Паспорт</label>
+        <input id="passport" type="text" name="passport" value="{{ user.passport }}" required>
+
+        <label for="inn">ИНН</label>
+        <input id="inn" type="text" name="inn" value="{{ user.inn }}" required>
+
+        <label for="snils">СНИЛС</label>
+        <input id="snils" type="text" name="snils" value="{{ user.snils }}" required>
+
+        <label for="phone">Телефон</label>
+        <input id="phone" type="text" name="phone" value="{{ user.phone }}" required>
+
+        <label for="reg_address">Адрес прописки</label>
+        <input id="reg_address" type="text" name="reg_address" value="{{ user.reg_address }}" required>
+
+        <label for="res_address">Адрес проживания</label>
+        <input id="res_address" type="text" name="res_address" value="{{ user.res_address or '' }}">
+
+        <label for="clothing_size">Размер одежды</label>
+        <input id="clothing_size" type="text" name="clothing_size" value="{{ user.clothing_size or '' }}">
+
+        <label for="shoe_size">Размер обуви</label>
+        <input id="shoe_size" type="text" name="shoe_size" value="{{ user.shoe_size or '' }}">
+    </div>
 
         <!-- Фото -->
-        <div class="form-group">
-            <label>Фото:</label>
+    <div class="form-grid">
+        <label>Фото</label>
+        <div>
             <input type="file" name="photo" accept="image/*">
-            {% if user.photo_path %}
-            <div class="current-photo">
+           {% if user.photo_path %}
+              <div class="current-photo">
                 <span>Текущее фото:</span>
                 <img src="{{ url_for('static', filename=user.photo_path) }}" alt="Фото сотрудника">
-            </div>
-            {% endif %}
+              </div>
+           {% endif %}
         </div>
+    </div>
 
         <!-- Дополнительные поля -->
         <div class="form-section">
@@ -68,14 +99,15 @@
         <!-- Сканы -->
         <h2>Добавить сканы</h2>
         <div id="scan-fields">
-            {% for scan in user.scans %}
-            <div class="field-row" data-scan-id="{{ scan.id }}">
+           {% for scan in user.scans %}
+              <div class="field-row" data-scan-id="{{ scan.id }}">
                 <a href="{{ url_for('static', filename=scan.scan_path) }}" target="_blank">📎</a>
                 <input type="text" name="existing_scan_desc[]" value="{{ scan.description }}" placeholder="Описание скана" required>
                 <input type="hidden" name="existing_scan_id[]" value="{{ scan.id }}">
-                <button type="button" class="remove-button" onclick="deleteScan({{ scan.id }})">✖</button>
-            </div>
-            {% endfor %}
+                <button type="button" class="remove-button"
+                        onclick="deleteScan({{ scan.id }})">✖</button>
+              </div>
+           {% endfor %}
         </div>
 
         <!-- Новые сканы -->
@@ -117,18 +149,18 @@
 
     function deleteScan(scanId) {
         if (!confirm("Удалить этот скан?")) return;
-
-        fetch(`/delete_scan/${scanId}`, {
-            method: 'POST'
+        fetch(`/delete_user_scan/${scanId}`, {
+          method: 'POST'
         }).then(response => {
-            if (response.ok) {
-                const scanElem = document.querySelector(`[data-scan-id="${scanId}"]`);
-                if (scanElem) scanElem.remove();
-            } else {
-                alert("Ошибка при удалении скана");
-            }
+          if (response.ok) {
+            // убираем блок из DOM
+            const elem = document.querySelector(`[data-scan-id="${scanId}"]`);
+            if (elem) elem.remove();
+          } else {
+            alert("Ошибка при удалении скана");
+          }
         });
-    }
+   }
 </script>
 </body>
 </html>

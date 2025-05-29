@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Архив сотрудников{% endblock %}
+{% block page_header %}Архив сотрудников{% endblock %}
+
+{% block content %}
+  {% if users %}
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Фамилия</th>
+          <th>Имя</th>
+          <th>Telegram ID</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.surname }}</td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.telegram_id }}</td>
+          <td>
+            <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="button primary">↩️ Разархивировать</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Архив сотрудников пуст.</p>
+  {% endif %}
+{% endblock %}

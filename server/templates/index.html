@@ -14,11 +14,29 @@
 </head>
 <body>
   <nav class="tabs">
-    <a href="{{ url_for('index') }}"    class="tab {% if active_tab=='users' %}active{% endif %}">Сотрудники</a>
-    <a href="{{ url_for('projects') }}" class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
-    <a href="{{ url_for('show_reports') }}" class="tab {% if active_tab=='reports' %}active{% endif %}">Отчеты</a>
+    <a href="{% if archive %}{{ url_for('archive_users') }}{% else %}{{ url_for('index') }}{% endif %}"
+       class="tab {% if active_tab=='users'    %}active{% endif %}">Сотрудники</a>
+    <a href="{% if archive %}{{ url_for('archive_projects') }}{% else %}{{ url_for('projects') }}{% endif %}"
+       class="tab {% if active_tab=='projects' %}active{% endif %}">Проекты</a>
+    <a href="{% if archive %}{{ url_for('archive_reports') }}{% else %}{{ url_for('show_reports') }}{% endif %}"
+       class="tab {% if active_tab=='reports'  %}active{% endif %}">Отчеты</a>
+
     <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
-    <a href="{{ url_for('export_users') }}" class="button primary">📤 Выгрузить в Excel</a>
+
+    <div class="header-actions">
+      {% if not archive %}
+        <a href="{{ url_for('export_' ~ active_tab) }}" class="button primary">📤 Выгрузить в Excel</a>
+        <a href="{{ url_for('archive_' ~ active_tab) }}" class="button secondary">📦 Архив</a>
+      {% else %}
+        {% if active_tab=='users' %}
+          <a href="{{ url_for('index') }}" class="button primary">← Назад к Сотрудники</a>
+        {% elif active_tab=='projects' %}
+          <a href="{{ url_for('projects') }}" class="button primary">← Назад к Проекты</a>
+        {% elif active_tab=='reports' %}
+          <a href="{{ url_for('show_reports') }}" class="button primary">← Назад к Отчеты</a>
+        {% endif %}
+      {% endif %}
+    </div>
   </nav>
 
   <h1>Список сотрудников</h1>
@@ -40,6 +58,9 @@
         <a href="{{ url_for('edit_user', user_id=u.id) }}" class="button">✏️ Редактировать</a>
         <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
           <button type="submit" class="button delete">❌ Удалить</button>
+        </form>
+        <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="button secondary">📦 В архив</button>
         </form>
       </div>
     {% endfor %}
@@ -70,6 +91,9 @@
           <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn-edit">✏️ Редактировать</a>
           <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
             <button type="submit" class="btn-delete">❌ Удалить</button>
+          </form>
+          <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn-archive">📦</button>
           </form>
         </td>
       </tr>

@@ -13,32 +13,66 @@
     <a href="{{ url_for('logout') }}" class="button delete">Выйти</a>
 </nav>
 
+
+
 <div class="form-container">
     <h1>Добавить сотрудника</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <!-- Основные поля -->
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('add_user') }}">
         <div class="form-grid">
-            <input type="text" name="telegram_id" placeholder="Telegram ID" required>
-            <input type="text" name="surname" placeholder="Фамилия" required>
-            <input type="text" name="name" placeholder="Имя" required>
-            <input type="text" name="patronymic" placeholder="Отчество">
-            <input type="date" name="birth_date" required>
-            <select name="position" required>
-                <option value="" disabled selected>Выберите должность</option>
-                {% for pos in positions %}
-                <option value="{{ pos }}">{{ pos }}</option>
-                {% endfor %}
-            </select>
-            <input type="text" name="passport" placeholder="Паспорт" required>
-            <input type="text" name="inn" placeholder="ИНН" required>
-            <input type="text" name="snils" placeholder="СНИЛС" required>
-            <input type="text" name="phone" placeholder="Телефон" required>
-            <input type="text" name="reg_address" placeholder="Адрес прописки" required>
-            <input type="text" name="res_address" placeholder="Адрес проживания">
-            <input type="text" name="clothing_size" placeholder="Размер одежды">
-            <input type="text" name="shoe_size" placeholder="Размер обуви">
-            <input type="file" name="photo" accept="image/*">
-        </div>
+            <label for="telegram_id">Telegram ID</label>
+            <input id="telegram_id" type="text" name="telegram_id" placeholder="Telegram ID" required>
+
+
+        <label for="surname">Фамилия</label>
+        <input id="surname" type="text" name="surname" placeholder="Фамилия" required>
+
+        <label for="name">Имя</label>
+        <input id="name" type="text" name="name" placeholder="Имя" required>
+
+        <label for="patronymic">Отчество</label>
+        <input id="patronymic" type="text" name="patronymic" placeholder="Отчество">
+
+        <label for="birth_date">Дата рождения</label>
+        <input id="birth_date" type="text" name="birth_date" placeholder="дд.мм.гггг" required>
+
+        <label for="position">Должность</label>
+        <select id="position" name="position" required>
+            <option value="" disabled selected>-- выберите должность --</option>
+            {% for pos in positions %}
+            <option value="{{ pos }}">{{ pos }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="passport">Паспорт</label>
+        <input id="passport" type="text" name="passport" placeholder="Паспорт" required>
+
+        <label for="inn">ИНН</label>
+        <input id="inn" type="text" name="inn" placeholder="ИНН" required>
+
+        <label for="snils">СНИЛС</label>
+        <input id="snils" type="text" name="snils" placeholder="СНИЛС" required>
+
+        <label for="phone">Телефон</label>
+        <input id="phone" type="text" name="phone" placeholder="Телефон" required>
+
+        <label for="reg_address">Адрес прописки</label>
+        <input id="reg_address" type="text" name="reg_address" placeholder="Адрес прописки" required>
+
+        <label for="res_address">Адрес проживания</label>
+        <input id="res_address" type="text" name="res_address" placeholder="Адрес проживания">
+
+        <label for="clothing_size">Размер одежды</label>
+        <input id="clothing_size" type="text" name="clothing_size" placeholder="Размер одежды">
+
+        <label for="shoe_size">Размер обуви</label>
+        <input id="shoe_size" type="text" name="shoe_size" placeholder="Размер обуви">
+    </div>
+
+    <div class="form-grid">
+        <label for="photo">Фото</label>
+        <input id="photo" type="file" name="photo" accept="image/*">
+    </div>
+
 
         <!-- Дополнительные поля -->
         <h2>Дополнительные поля</h2>

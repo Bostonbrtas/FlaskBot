@@ -8,6 +8,7 @@ instance/
 .db
 .env
 
+
 # macOS
 .DS_Store
 

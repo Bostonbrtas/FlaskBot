@@ -87,10 +87,14 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # Ваш существующий код обработчика
-    users = User.query.order_by(User.id).all()
-    return render_template('index.html', users=users, active_tab='users')
-
+    # вместо User.query.order_by(...) берём только не-архивированных
+    users = User.query.filter_by(archived=False).order_by(User.id).all()
+    return render_template(
+        'index.html',
+        users=users,
+        active_tab='users',
+        archive=False
+    )
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -117,7 +121,19 @@ def edit_user(user_id):
         user.surname       = request.form['surname'].strip()
         user.name          = request.form['name'].strip()
         user.patronymic    = request.form.get('patronymic') or None
-        user.birth_date    = datetime.strptime(request.form['birth_date'], '%Y-%m-%d').date()
+        bd_str = request.form['birth_date'].strip()
+        try:
+            # первый приоритет — привычный вам формат с точками
+            user.birth_date = datetime.strptime(bd_str, '%d.%m.%Y').date()
+        except ValueError:
+            # если не совпало, пробуем ISO-формат YYYY-MM-DD (текстовый date input)
+            try:
+                user.birth_date = datetime.strptime(bd_str, '%Y-%m-%d').date()
+            except ValueError:
+                # на крайний случай, если ни один формат не подошёл,
+                # вы можете оставить None или присвоить как есть (строку),
+                # но тогда model.birth_date должен быть String, а не Date
+                user.birth_date = None
         user.position      = request.form['position']
         user.passport      = request.form['passport'].strip()
         user.inn           = request.form['inn'].strip()
@@ -194,7 +210,20 @@ def add_user():
         # обязательные поля
         user.surname = request.form['surname'].strip()
         user.name = request.form['name'].strip()
-        user.birth_date = datetime.strptime(request.form['birth_date'], '%Y-%m-%d').date()
+        # в функции add_user
+        bd_str = request.form['birth_date'].strip()
+        try:
+            # первый приоритет — привычный вам формат с точками
+            user.birth_date = datetime.strptime(bd_str, '%d.%m.%Y').date()
+        except ValueError:
+            # если не совпало, пробуем ISO-формат YYYY-MM-DD (текстовый date input)
+            try:
+                user.birth_date = datetime.strptime(bd_str, '%Y-%m-%d').date()
+            except ValueError:
+                # на крайний случай, если ни один формат не подошёл,
+                # вы можете оставить None или присвоить как есть (строку),
+                # но тогда model.birth_date должен быть String, а не Date
+                user.birth_date = None
         user.position = request.form['position']
         user.passport = request.form['passport'].strip()
         user.inn = request.form['inn'].strip()
@@ -277,9 +306,35 @@ def logout():
 
 @app.route('/projects')
 def projects():
-    projects = Project.query.order_by(Project.id).all()
-    return render_template('projects.html', projects=projects, active_tab='projects')
+    # читаем параметры сортировки из строки запроса
+    sort = request.args.get('sort', 'id')
+    direction = request.args.get('dir', 'asc')
 
+    # В app.py, внутри valid_sorts:
+    valid_sorts = {
+        'alpha': Project.name,
+        'address': Project.address,
+        'latitude': Project.latitude,
+        'longitude': Project.longitude,
+        'ask_location': Project.ask_location
+    }
+    column = valid_sorts.get(sort, Project.id)
+
+    # направление
+    if direction == 'desc':
+        column = column.desc()
+
+    # только неархивные
+    projects = Project.query.filter_by(archived=False).order_by(column).all()
+
+    return render_template(
+        'projects.html',
+        projects=projects,
+        active_tab='projects',
+        archive=False,
+        sort=sort,
+        dir=direction
+    )
 
 @app.route("/project/add", methods=["GET", "POST"])
 def add_project():
@@ -334,12 +389,18 @@ from sqlalchemy.orm import joinedload
 
 @app.route('/reports')
 def show_reports():
-    reports = Report.query.options(
+    reports = Report.query.filter_by(archived=False).options(
         joinedload(Report.user),
         joinedload(Report.project),
-        joinedload(Report.photos)  # ← ВОТ ЭТО добавь
-    ).all()
-    return render_template('reports.html', reports=reports, active_tab='reports')
+        joinedload(Report.photos)
+    ).order_by(Report.start_time.desc()).all()
+    return render_template(
+        'reports.html',
+        reports=reports,
+        active_tab='reports',
+        archive=False
+    )
+
 @app.route("/edit_project/<int:project_id>", methods=["GET", "POST"])
 def edit_project(project_id):
     project = Project.query.get_or_404(project_id)
@@ -475,19 +536,19 @@ def export_users():
 @app.route('/export_projects')
 def export_projects():
     projects = Project.query.all()
-    data = [{
-        "ID": p.id,
-        "Город": p.city,
-        "Улица": p.street,
-        "Дом": p.building,
-        "Широта": p.latitude,
-        "Долгота": p.longitude
-    } for p in projects]
-
+    # Собираем данные для Excel-файла
+    data = []
+    for p in projects:
+        data.append({
+            'ID': p.id,
+            'Название': p.name,
+            'Адрес': p.address,
+            'Широта': p.latitude,
+            'Долгота': p.longitude
+        })
     df = pd.DataFrame(data)
     file_path = os.path.join(app.instance_path, "projects_export.xlsx")
     df.to_excel(file_path, index=False)
-
     return send_file(file_path, as_attachment=True)
 
 @app.route('/export_reports')
@@ -508,15 +569,16 @@ def export_reports():
         project = report.project
 
         telegram_id = user.telegram_id if user else ""
-        full_name = f"{user.surname} {user.name}" if user else ""
-        project_address = f"{project.city}, {project.street}, {project.building}" if project else ""
+        full_name   = f"{user.surname} {user.name}" if user else ""
+        # Берём название проекта и его адрес
+        project_address = f"{project.name}, {project.address}" if project else ""
         start = report.start_time.strftime("%Y-%m-%d %H:%M") if report.start_time else ""
-        end = report.end_time.strftime("%Y-%m-%d %H:%M") if report.end_time else ""
-        text = report.text_report or ""
+        end   = report.end_time.strftime("%Y-%m-%d %H:%M") if report.end_time else ""
+        text  = report.text_report or ""
 
         # Фото — гиперссылка, если есть
-        if report.photo_path:
-            photo_url = url_for('static', filename=report.photo_path, _external=True)
+        if report.photo_link:
+            photo_url = report.photo_link
         else:
             photo_url = None
 
@@ -529,31 +591,140 @@ def export_reports():
             cell.hyperlink = photo_url
             cell.font = Font(color="0000FF", underline="single")
 
-    # Ширина колонок
-    for i, column_title in enumerate(headers, 1):
+    # Подгоняем ширину колонок
+    for i, _ in enumerate(headers, 1):
         ws.column_dimensions[get_column_letter(i)].width = 20
 
-    # Сохраняем файл
     export_path = os.path.join(app.instance_path, "reports_export.xlsx")
     wb.save(export_path)
-
     return send_file(export_path, as_attachment=True)
 
-@app.route('/delete_scan/<int:scan_id>', methods=['POST'])
-def delete_scan(scan_id):
-    scan = ProjectScan.query.get_or_404(scan_id)
-    try:
-        file_path = os.path.join(app.static_folder, scan.scan_path)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+@app.route('/delete_user_scan/<int:scan_id>', methods=['POST'])
+def delete_user_scan(scan_id):
+    scan = UserScan.query.get_or_404(scan_id)
+    # Удаляем файл с диска
+    file_path = os.path.join(current_app.static_folder, scan.scan_path)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    # Удаляем запись из БД
+    db.session.delete(scan)
+    db.session.commit()
+    return '', 204
 
-        db.session.delete(scan)
+@app.route('/archive/users')
+def archive_users():
+    users = User.query.filter_by(archived=True).order_by(User.id).all()
+    return render_template(
+        'archive_users.html',
+        users=users,
+        active_tab='users',
+        archive=True
+    )
+
+@app.route('/archive/projects')
+def archive_projects():
+    # читаем параметры сортировки из строки запроса
+    sort = request.args.get('sort', 'alpha')
+    direction = request.args.get('dir', 'asc')
+
+    # ключи сортировки → колонки модели
+    valid_sorts = {
+        'alpha':        Project.name,
+        'address':      Project.address,
+        'latitude':     Project.latitude,
+        'longitude':    Project.longitude,
+        'ask_location': Project.ask_location
+    }
+    column = valid_sorts.get(sort, Project.name)
+
+    # направление
+    if direction == 'desc':
+        column = column.desc()
+
+    # выбираем только архивные проекты и сортируем
+    projects = Project.query.filter_by(archived=True).order_by(column).all()
+
+    return render_template(
+        'archive_projects.html',
+        projects=projects,
+        active_tab='projects',
+        archive=True,
+        sort=sort,
+        dir=direction
+    )
+
+@app.route('/archive/reports')
+def archive_reports():
+    reports = Report.query.filter_by(archived=True).options(
+        joinedload(Report.user),
+        joinedload(Report.project),
+        joinedload(Report.photos)
+    ).order_by(Report.start_time.desc()).all()
+    return render_template(
+        'archive_reports.html',
+        reports=reports,
+        active_tab='reports',
+        archive=True
+    )
+@app.route('/user/<int:user_id>/archive', methods=['POST'])
+def toggle_archive_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.archived = not user.archived
+    db.session.commit()
+    # вернуться на ту же страницу (список или архив)
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/project/<int:project_id>/archive', methods=['POST'])
+def toggle_archive_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    project.archived = not project.archived
+    db.session.commit()
+    return redirect(request.referrer or url_for('projects'))
+
+@app.route('/report/<int:report_id>/archive', methods=['POST'])
+def toggle_archive_report(report_id):
+    report = Report.query.get_or_404(report_id)
+    report.archived = not report.archived
+    db.session.commit()
+    return redirect(request.referrer or url_for('show_reports'))
+
+
+@app.route('/edit_report/<int:report_id>', methods=['GET', 'POST'])
+def edit_report(report_id):
+    report = Report.query.get_or_404(report_id)
+    if request.method == 'POST':
+        # Обновляем поля из формы
+        report.project_id = int(request.form['project_id'])
+
+        # Новая строка парсинга начала в формате "дд.мм.гггг, чч:мм"
+        report.start_time = datetime.strptime(
+            request.form['start_time'],
+            '%d.%m.%Y, %H:%M'
+        )
+
+        # Парсим окончание только если есть непустое значение
+        end_str = request.form.get('end_time', '').strip()
+        if end_str:
+            report.end_time = datetime.strptime(
+                end_str,
+                '%d.%m.%Y, %H:%M'
+            )
+        else:
+            report.end_time = None
+
+        report.text_report = request.form['text_report'].strip()
         db.session.commit()
-        return '', 204  # Успешно, без содержимого
-    except Exception as e:
-        db.session.rollback()
-        return f"Ошибка: {e}", 500
+        return redirect(url_for('show_reports'))
 
+    # GET — отображаем форму
+    projects = Project.query.filter_by(archived=False).all()
+    return render_template(
+        'edit_report.html',
+        report=report,
+        projects=projects,
+        active_tab='reports',
+        archive=False
+    )
 def open_browser():
     # Пауза, чтобы сервер успел подняться
     webbrowser.open_new("http://127.0.0.1:5001/")

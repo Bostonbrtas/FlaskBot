@@ -4,6 +4,7 @@ from db import db
 
 class User(db.Model):
     __tablename__ = 'user'
+    archived     = db.Column(db.Boolean, nullable=False, default=False)
     id           = db.Column(db.Integer, primary_key=True)
     telegram_id  = db.Column(db.String(50), unique=True, nullable=False)
     surname      = db.Column(db.String(100), nullable=False)
@@ -53,7 +54,7 @@ class Project(db.Model):
     longitude      = db.Column(db.Float, nullable=False)
     responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     ask_location   = db.Column(db.Boolean, default=True)
-
+    archived       = db.Column(db.Boolean, nullable=False, default=False)
     # Замена backref на back_populates
     responsible = db.relationship('User', back_populates='projects')
     scans       = db.relationship(
@@ -75,6 +76,8 @@ class Report(db.Model):
     user       = db.relationship('User',   backref='reports', lazy='joined')
     project    = db.relationship('Project',backref='reports', lazy='joined')
     photos = db.relationship('ReportPhoto', back_populates='report', cascade='all, delete-orphan')
+    archived   = db.Column(db.Boolean, nullable=False, default=False)
+
 
 class ProjectScan(db.Model):
     id = db.Column(db.Integer, primary_key=True)

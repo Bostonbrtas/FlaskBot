@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Архив проектов{% endblock %}
+{% block page_header %}Архив проектов{% endblock %}
+
+{% block content %}
+<form method="get" action="{{ url_for('archive_projects') }}" style="margin-bottom:1em;">
+  <label for="sortSelect">Сортировать по:</label>
+  <select name="sort" id="sortSelect" onchange="this.form.submit()">
+    <option value="alpha"        {% if sort=='alpha'        %}selected{% endif %}>Алфавит</option>
+    <option value="address"      {% if sort=='address'      %}selected{% endif %}>Адрес</option>
+    <option value="latitude"     {% if sort=='latitude'     %}selected{% endif %}>Широта</option>
+    <option value="longitude"    {% if sort=='longitude'    %}selected{% endif %}>Долгота</option>
+    <option value="ask_location" {% if sort=='ask_location' %}selected{% endif %}>Геолокация</option>
+  </select>
+  <input type="hidden" name="dir" value="{{ dir }}">
+</form>
+  {% if projects %}
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Название</th>
+          <th>Адрес</th>
+          <th>Широта</th>
+          <th>Долгота</th>
+          <th>Геолокация</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.address }}</td>
+          <td>{{ p.latitude }}</td>
+          <td>{{ p.longitude }}</td>
+          <td>{% if p.ask_location %}Да{% else %}Нет{% endif %}</td>
+          <td>
+            <form action="{{ url_for('toggle_archive_project', project_id=p.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="button primary">↩️ Разархивировать</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Архив проектов пуст.</p>
+  {% endif %}
+{% endblock %}

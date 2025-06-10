@@ -43,6 +43,34 @@
             {% endfor %}
         </select>
 
+        <label for="contract_type">Договор</label>
+        <select name="contract_type" id="contract_type" required>
+            <option value="">-- выберите --</option>
+            <option value="Трудовой" {% if user and user.contract_type == "Трудовой" %}selected{% endif %}>Трудовой</option>
+            <option value="Самозанятый" {% if user and user.contract_type == "Самозанятый" %}selected{% endif %}>Самозанятый</option>
+            <option value="ГПХ" {% if user and user.contract_type == "ГПХ" %}selected{% endif %}>ГПХ</option>
+            <option value="Подрядчик" {% if user and user.contract_type == "Подрядчик" %}selected{% endif %}>Подрядчик</option>
+        </select>
+
+        <div class="mb-4">
+          <label class="block text-lg font-semibold mb-2">Доступные объекты</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 border p-4 rounded-xl shadow">
+            {% for p in projects %}
+              <label class="inline-flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="allowed_projects"
+                  value="{{ p._id }}"
+                  {% if p._id|string in selected_project_ids %}checked{% endif %}
+                  class="form-checkbox text-blue-600"
+                >
+                <span>{{ p.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+
         <label for="passport">Паспорт</label>
         <input id="passport" type="text" name="passport" placeholder="Паспорт" required>
 

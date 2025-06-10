@@ -11,6 +11,18 @@
     #projectsCards { display: flex; flex-wrap: wrap; gap: 1em; }
     .cards-container { padding: 0; margin: 0; list-style: none; }
     #projectsCards .card { flex: 0 0 30%; }
+    td.actions {
+      white-space: nowrap;
+      padding: 2px 6px;
+    }
+
+    td.actions .button {
+      padding: 4px 6px;
+      font-size: 12px;
+      margin: 0 2px;
+      width: auto;
+      min-width: 32px;
+    }
   </style>
 </head>
 <body>
@@ -73,38 +85,38 @@
     </div>
 
     <!-- Таблица -->
-    <table id="projectsTable" class="report-table">
-    <thead>
-      <tr>
-        <th>Название</th>
-        <th>Адрес</th>
-        <th>Широта</th>
-        <th>Долгота</th>
-        <th>Геолокация</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
+    <table id="projectsTable" class="report-table project-table">
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>Адрес</th>
+          <th>Широта</th>
+          <th>Долгота</th>
+          <th>Геолокация</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
 
-      <tbody>
-        {% for p in projects %}
-          <tr>
-            <td>{{ p.name or '(Без названия)' }}</td>
-            <td>{{ p.address or '(не указан)' }}</td>
-            <td>{{ p.latitude }}</td>
-            <td>{{ p.longitude }}</td>
-            <td><input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}></td>
-            <td>
-              <a href="{{ url_for('edit_project',   project_id=p.id) }}" class="btn-edit">✏️</a>
-              <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
-                <button type="submit" class="btn-delete" onclick="return confirm('Удалить проект?')">❌</button>
-              </form>
-              <form action="{{ url_for('toggle_archive_project', project_id=p.id) }}" method="POST" style="display:inline;">
-                <button type="submit" class="btn-archive">📦</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
+        <tbody>
+          {% for p in projects %}
+            <tr>
+              <td>{{ p.name or '(Без названия)' }}</td>
+              <td>{{ p.address or '(не указан)' }}</td>
+              <td>{{ p.latitude }}</td>
+              <td>{{ p.longitude }}</td>
+              <td><input type="checkbox" disabled {% if p.ask_location %}checked{% endif %}></td>
+              <td>
+                <a href="{{ url_for('edit_project',   project_id=p.id) }}" class="btn-edit">✏️</a>
+                <form action="{{ url_for('delete_project', project_id=p.id) }}" method="POST" style="display:inline;">
+                  <button type="submit" class="btn-delete" onclick="return confirm('Удалить проект?')">❌</button>
+                </form>
+                <form action="{{ url_for('toggle_archive_project', project_id=p.id) }}" method="POST" style="display:inline;">
+                  <button type="submit" class="btn-archive">📦</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
     </table>
   </div>
 

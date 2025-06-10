@@ -4,6 +4,36 @@
     <meta charset="UTF-8">
     <title>Отчеты</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 11px;
+            table-layout: fixed;
+        }
+        th, td {
+            font-size: 10px;
+            max-width: 80px;
+            padding: 2px 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        td.actions {
+          white-space: nowrap;
+          padding: 2px 6px;
+        }
+
+        td.actions .button {
+        padding: 2px 4px;
+        font-size: 10px;
+        margin: 0 2px;
+        min-width: 26px;
+        border-radius: 6px;
+        }
+    </style>
 </head>
 <body>
    <nav class="tabs">
@@ -33,7 +63,22 @@
     </nav>
 
     <div class="container">
-        <h1>Отчеты сотрудников</h1>
+       <h1 style="display: flex; justify-content: space-between; align-items: center;">
+        Отчеты сотрудников
+        <a href="{{ url_for('add_report') }}" class="button primary">➕ Создать отчёт</a>
+      </h1>
+      <form method="get" action="{{ url_for('sorted_reports') }}">
+        <label for="sortSelect" style="margin-right: 0.5em;">Сортировать по:</label>
+        <select name="sort" id="sortSelect" onchange="this.form.submit()">
+          <option value="surname"     {% if sort == 'surname' %}selected{% endif %}>Фамилия</option>
+          <option value="telegram_id" {% if sort == 'telegram_id' %}selected{% endif %}>Telegram ID</option>
+          <option value="project"     {% if sort == 'project' %}selected{% endif %}>Объект</option>
+          <option value="start_time"  {% if sort == 'start_time' %}selected{% endif %}>Начало работы</option>
+          <option value="end_time"    {% if sort == 'end_time' %}selected{% endif %}>Конец работы</option>
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Недавно добавленные</option>
+        </select>
+        <input type="hidden" name="order" value="{{ order }}">
+      </form>
 
         <table class="report-table">
             <thead>
@@ -45,6 +90,8 @@
                     <th>Конец</th>
                     <th>Текст отчёта</th>
                     <th>Фото</th>
+                    <th style="max-width: 70px;">Гео нач.</th>
+                    <th style="max-width: 70px;">Гео конц.</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -70,23 +117,28 @@
                    </td>
                     <td>{{ report.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td>{{ report.end_time.strftime('%d.%m.%Y %H:%M') if report.end_time else '—' }}</td>
-                    <td>{{ report.text_report or '—' }}</td>
+                   <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                        title="{{ report.text_report }}">
+                      {{ report.text_report or '-' }}
+                   </td>
                   <td>
                         {% if report.photo_link and report.photo_link not in ['None', '', None] %}
-                            <a href="{{ report.photo_link }}" target="_blank">📁 Смотреть фото на Яндекс.Диске</a>
+                            <a href="{{ report.photo_link }}" target="_blank">📁 Смотреть фото</a>
                         {% else %}
                             <span class="no-photo">—</span>
                         {% endif %}
                    </td>
-                    <td>
-                      <a href="{{ url_for('edit_report', report_id=report.id) }}" class="button">✏️</a>
-                      <form action="{{ url_for('toggle_archive_report', report_id=report.id) }}"
+                   <td>{{ report.entry_location_method or '—' }}</td>
+                   <td>{{ report.exit_location_method or '—' }}</td>
+                    <td class="actions">
+                      <a href="{{ url_for('edit_report', report_id=report._id) }}" class="button">✏️</a>
+                      <form action="{{ url_for('toggle_archive_report', report_id=report._id) }}"
                             method="POST" style="display:inline;">
-                        <button type="submit" class="button secondary">📦 Архив</button>
+                        <button type="submit" class="button secondary">📦</button>
                       </form>
-                      <form action="{{ url_for('delete_report', report_id=report.id) }}"
+                      <form action="{{ url_for('delete_report', report_id=report._id) }}"
                             method="POST" style="display:inline;">
-                        <button type="submit" class="button delete">Удалить</button>
+                        <button type="submit" class="button delete">✖</button>
                       </form>
                     </td>
                 </tr>

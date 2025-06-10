@@ -4,28 +4,45 @@
 {% block page_header %}Архив сотрудников{% endblock %}
 
 {% block content %}
-  {% if users %}
+<form method="get" action="{{ url_for('archive_users') }}">
+  <label for="sortSelect" style="margin-right: 0.5em;">Сортировать по:</label>
+  <select name="sort" id="sortSelect" onchange="this.form.submit()">
+    <option value="surname"     {% if sort == 'surname' %}selected{% endif %}>Фамилия</option>
+    <option value="name"        {% if sort == 'name' %}selected{% endif %}>Имя</option>
+    <option value="patronymic"  {% if sort == 'patronymic' %}selected{% endif %}>Отчество</option>
+    <option value="telegram_id" {% if sort == 'telegram_id' %}selected{% endif %}>Telegram ID</option>
+    <option value="position"    {% if sort == 'position' %}selected{% endif %}>Должность</option>
+  </select>
+  <input type="hidden" name="order" value="{{ order }}">
+</form>
+ {% if users %}
     <table class="report-table">
       <thead>
         <tr>
           <th>ID</th>
           <th>Фамилия</th>
           <th>Имя</th>
+          <th>Отчество</th>
           <th>Telegram ID</th>
+          <th>Должность</th>
+          <th>Договор</th>
           <th>Действия</th>
         </tr>
       </thead>
       <tbody>
         {% for u in users %}
         <tr>
-          <td>{{ u.id }}</td>
+          <td>{{ u._id }}</td>
           <td>{{ u.surname }}</td>
           <td>{{ u.name }}</td>
+          <td>{{ u.patronymic }}</td>
           <td>{{ u.telegram_id }}</td>
+          <td>{{ u.position }}</td>
+          <td>{{ u.contract_type or '-' }}</td>
           <td>
-            <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
-              <button type="submit" class="button primary">↩️ Разархивировать</button>
-            </form>
+              <form action="{{ url_for('toggle_archive_user', user_id=u._id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="button primary">↩️ Разархивировать</button>
+              </form>
           </td>
         </tr>
         {% endfor %}

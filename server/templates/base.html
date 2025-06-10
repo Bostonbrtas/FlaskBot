@@ -18,8 +18,12 @@
 
     <div class="header-actions">
       {% if not archive %}
+      {% if active_tab %}
         <a href="{{ url_for('export_' ~ active_tab) }}" class="button primary">📤 Выгрузить в Excel</a>
+      {% endif %}
+      {% if active_tab %}
         <a href="{{ url_for('archive_' ~ active_tab) }}" class="button secondary">📦 Архив</a>
+      {% endif %}
       {% else %}
         {% if active_tab == 'users' %}
           <a href="{{ url_for('index') }}" class="button primary">← Назад к Сотрудники</a>

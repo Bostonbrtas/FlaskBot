@@ -4,6 +4,18 @@
 {% block page_header %}Архив отчётов{% endblock %}
 
 {% block content %}
+<form method="get" action="{{ url_for('sorted_archive_reports') }}">
+  <label for="sortSelect" style="margin-right: 0.5em;">Сортировать по:</label>
+  <select name="sort" id="sortSelect" onchange="this.form.submit()">
+    <option value="surname"     {% if sort == 'surname' %}selected{% endif %}>Фамилия</option>
+    <option value="telegram_id" {% if sort == 'telegram_id' %}selected{% endif %}>Telegram ID</option>
+    <option value="project"     {% if sort == 'project' %}selected{% endif %}>Объект</option>
+    <option value="start_time"  {% if sort == 'start_time' %}selected{% endif %}>Начало</option>
+    <option value="end_time"    {% if sort == 'end_time' %}selected{% endif %}>Конец</option>
+    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Недавно добавленные</option>
+  </select>
+  <input type="hidden" name="order" value="{{ order }}">
+</form>
   {% if reports %}
     <table class="report-table">
       <thead>
@@ -15,6 +27,8 @@
           <th>Конец</th>
           <th>Текст отчёта</th>
           <th>Фото</th>
+          <th style="max-width: 70px;">Гео нач.</th>
+          <th style="max-width: 70px;">Гео конц.</th>
           <th>Действия</th>
         </tr>
       </thead>
@@ -34,8 +48,10 @@
               —
             {% endif %}
           </td>
+          <td>{{ report.entry_location_method or '—' }}</td>
+          <td>{{ report.exit_location_method or '—' }}</td>
           <td>
-            <form action="{{ url_for('toggle_archive_report', report_id=r.id) }}" method="POST" style="display:inline;">
+            <form action="{{ url_for('toggle_archive_report', report_id=r._id) }}" method="POST" style="display:inline;">
               <button type="submit" class="button primary">↩️ Разархивировать</button>
             </form>
           </td>

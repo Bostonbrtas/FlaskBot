@@ -1171,3 +1171,207 @@ select.input-field {
   padding: 0.25rem 0.5rem;
   font-size: 0.85rem;
 }
+
+.extra-field-row, .scan-field-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .extra-field-row input,
+  .scan-field-row input {
+    padding: 6px;
+    width: 200px;
+  }
+  .remove-field-btn, .remove-scan-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .green-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+.file-entry {
+  display: flex;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.file-entry input[type="file"] {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.remove-button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+table {
+    font-size: 12px;
+    table-layout: fixed;
+    width: 100%;
+}
+td, th {
+    padding: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+.actions-col {
+    white-space: nowrap;
+    overflow: visible !important;
+    max-width: none !important;
+}
+
+/* Таблица проектов — как отчёты */
+.project-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.project-table th,
+.project-table td {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+  vertical-align: middle;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-table th {
+  background: #2a7abe;
+  color: white;
+}
+
+.project-table td input[type="checkbox"] {
+  transform: scale(1.2);
+}
+
+.project-table td .btn-edit,
+.project-table td .btn-delete,
+.project-table td .btn-archive {
+  font-size: 14px;
+  padding: 4px 6px;
+  margin-right: 2px;
+  border: none;
+  cursor: pointer;
+}
+
+.project-table td .btn-edit {
+  background-color: #5cb85c;
+  color: white;
+  border-radius: 4px;
+}
+
+.project-table td .btn-delete {
+  background-color: #d9534f;
+  color: white;
+  border-radius: 4px;
+}
+
+.project-table td .btn-archive {
+  background-color: #777;
+  color: white;
+  border-radius: 4px;
+}
+
+/* ========== Projects table ========== */
+.project-table {
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.project-table th,
+.project-table td {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  vertical-align: middle;
+  text-align: left;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-table td form {
+  display: inline-block;
+  margin: 0 2px;
+}
+
+.project-table td .btn-edit,
+.project-table td .btn-delete,
+.project-table td .btn-archive {
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.project-table td .btn-edit {
+  background-color: #5cb85c;
+  color: white;
+}
+
+.project-table td .btn-delete {
+  background-color: #d9534f;
+  color: white;
+}
+
+.project-table td .btn-archive {
+  background-color: #777;
+  color: white;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    font-size: 18px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-right: 4px;
+    color: white; /* по умолчанию белый текст */
+}
+
+th, td {
+    max-width: 80px;
+    font-size: 10px;
+}
+
+td.actions .button {
+  padding: 2px 4px;
+  font-size: 10px;
+  min-width: 28px;
+}
+td {
+    word-wrap: break-word;
+    word-break: break-word;
+}

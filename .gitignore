@@ -1,28 +1,47 @@
-# Python
-__pycache__/
+# Виртуальное окружение
+.venv/
+venv/
+
+# SQLite базы данных (старые и текущие)
+*.db
+instance/*.db
+backups/*.db
+server/instance/*.db
+
+# Alembic миграции (если не нужны для Mongo)
+migrations/
+# Если всё же используешь Alembic для других целей — оставь
+
+# Логи и временные файлы
+*.log
+*.tmp
 *.pyc
-*.pyo
-*.pyd
-*.sqlite3
-instance/
-.db
-.env
+__pycache__/
 
-
-# macOS
-.DS_Store
-
-# Flask/Uploads
-static/scanProject/
-static/uploads/
-static/scans/
-static/reports/
-server/instance/
+# Файлы экспорта
 *.xlsx
+server/instance/*.xlsx
 
+# Файлы конфигураций
+.env
+*.ini
+
+# Медиа-файлы (если хранятся локально, а не в Git)
+static/uploads/
+static/reports/
+static/scans/
+static/scanProject/
+
+# Если случайно добавил изображения или временные ресурсы
+*.png
+*.jpg
+*.jpeg
+*.webp
 # PyCharm
 .idea/
 *.iml
-
-server/instance/users.db
+# macOS
+.DS_Store
+*.pyo
+*.pyd
 

@@ -37,30 +37,28 @@
         <label for="responsible_id">Ответственный</label>
         <select id="responsible_id" name="responsible_id" class="input-field" required>
           {% for u in users %}
-          <option value="{{ u.id }}" {% if u.id==project.responsible_id %}selected{% endif %}>
+          <option value="{{ u._id }}" {% if u._id == project.responsible_id %}selected{% endif %}>
             {{ u.surname }} {{ u.name }}
           </option>
           {% endfor %}
         </select>
       </div>
 
-      <!-- Существующие сканы с чекбоксом удаления -->
-     <!-- Сканы -->
-      <div class="scan-wrapper">
-        <h2>Добавить сканы</h2>
-        <button type="button" id="add-scan-btn" class="button primary">Добавить скан</button>
-      </div>
-
-      <!-- Добавленные сканы -->
-      <div id="scans-list" class="mt-3">
-        {% for scan in project.scans %}
-          <div class="field-row" data-scan-id="{{ scan.id }}">
-            <span class="file-upload-name">{{ scan.filename }}</span>
-            <button type="button" class="remove-button js-delete-scan" data-scan-id="{{ scan.id }}">×</button>
+      <h2>Сканы проекта</h2>
+      <div id="scan-list">
+        {% for scan in scans %}
+          <div class="field-row" data-scan-id="{{ scan._id }}">
+            <a href="{{ url_for('static', filename=scan.scan_path) }}" target="_blank" download>
+              📎 {{ scan.filename or "скачать файл" }}
+            </a>
+            <button type="button" class="remove-button" onclick="deleteScan('{{ scan._id }}')">✖</button>
           </div>
         {% endfor %}
       </div>
 
+      <!-- Загрузка новых -->
+      <div id="new-project-scans"></div>
+      <button type="button" class="button primary" onclick="addProjectScan()">Добавить скан</button>
       <!-- Геопозиция -->
       <div class="geo-wrapper">
         <label class="geo-label">
@@ -77,60 +75,32 @@
   </div>
 
   <script>
-    // Тот же скрипт для динамического добавления сканов
-    const scansList = document.getElementById('scans-list');
-    document.getElementById('add-scan-btn').addEventListener('click', () => {
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.name = 'scans';
-      fileInput.accept = '.png,.jpg,.jpeg,.gif,.pdf';
-      fileInput.style.display = 'none';
-      fileInput.addEventListener('change', () => {
-        if (!fileInput.files.length) return;
-        const row = document.createElement('div');
-        row.className = 'field-row';
-        row.appendChild(fileInput);
+    // Тот же скрипт для динамического добавления сканов<script>
+  function addProjectScan() {
+    const container = document.getElementById('new-project-scans');
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `
+      <input type="file" name="scans" required>
+      <button type="button" class="remove-button" onclick="this.parentElement.remove()">✖</button>
+    `;
+    container.appendChild(row);
+  }
 
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'file-upload-name';
-        nameSpan.textContent = fileInput.files[0].name;
-        row.appendChild(nameSpan);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-button';
-        removeBtn.textContent = '×';
-        removeBtn.addEventListener('click', () => scansList.removeChild(row));
-        row.appendChild(removeBtn);
-
-        scansList.appendChild(row);
-      });
-      document.body.appendChild(fileInput);
-      fileInput.click();
+  function deleteProjectScan(scanId) {
+    if (!confirm("Удалить этот скан?")) return;
+    fetch(`/delete_project_scan/${scanId}`, {
+      method: 'POST'
+    }).then(response => {
+      if (response.ok) {
+        const elem = document.querySelector(`[data-scan-id="${scanId}"]`);
+        if (elem) elem.remove();
+      } else {
+        alert("Ошибка при удалении скана");
+      }
     });
-
-      document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.js-delete-scan').forEach(button => {
-      button.addEventListener('click', () => {
-        const scanId = button.dataset.scanId;
-        fetch(`/delete_scan/${scanId}`, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        }).then(response => {
-          if (response.ok) {
-            const row = document.querySelector(`.field-row[data-scan-id="${scanId}"]`);
-            if (row) row.remove();
-          } else {
-            alert("Ошибка при удалении скана");
-          }
-        }).catch(() => {
-          alert("Ошибка соединения с сервером");
-        });
-      });
-    });
-  });
+  }
+</script>
   </script>
 </body>
 </html>

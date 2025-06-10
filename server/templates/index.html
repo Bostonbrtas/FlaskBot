@@ -41,6 +41,18 @@
 
   <h1>Список сотрудников</h1>
 
+  <form method="get" action="{{ url_for('sorted_users') }}">
+    <label for="sortSelect" style="margin-right: 0.5em;">Сортировать по:</label>
+    <select name="sort" id="sortSelect" onchange="this.form.submit()">
+      <option value="surname"     {% if sort == 'surname' %}selected{% endif %}>Фамилия</option>
+      <option value="name"        {% if sort == 'name' %}selected{% endif %}>Имя</option>
+      <option value="patronymic"  {% if sort == 'patronymic' %}selected{% endif %}>Отчество</option>
+      <option value="telegram_id" {% if sort == 'telegram_id' %}selected{% endif %}>Telegram ID</option>
+      <option value="position"    {% if sort == 'position' %}selected{% endif %}>Должность</option>
+    </select>
+    <input type="hidden" name="order" value="{{ order }}">
+  </form>
+
   <div class="view-controls" style="margin-bottom:1em; display:flex; align-items:center; gap:1em;">
     <button onclick="location.href='{{ url_for('add_user') }}'" class="button">➕ Добавить сотрудника</button>
     <label>
@@ -49,17 +61,18 @@
     </label>
   </div>
 
+
   <!-- Карточки -->
   <div id="employeesCards" class="cards-container">
     {% for u in users %}
       <div class="card">
         <h2>{{ u.surname }} {{ u.name }}</h2>
         <p><strong>Telegram ID:</strong> {{ u.telegram_id }}</p>
-        <a href="{{ url_for('edit_user', user_id=u.id) }}" class="button">✏️ Редактировать</a>
-        <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
+        <a href="{{ url_for('edit_user', user_id=u._id) }}" class="button">✏️ Редактировать</a>
+        <form action="{{ url_for('delete_user', user_id=u._id) }}" method="POST" style="display:inline;">
           <button type="submit" class="button delete">❌ Удалить</button>
         </form>
-        <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
+        <form action="{{ url_for('toggle_archive_user', user_id=u._id) }}" method="POST" style="display:inline;">
           <button type="submit" class="button secondary">📦 В архив</button>
         </form>
       </div>
@@ -69,6 +82,7 @@
     {% endif %}
   </div>
 
+
   <!-- Таблица -->
   <table id="employeesTable" class="report-table">
     <thead>
@@ -77,6 +91,8 @@
         <th>Фамилия</th>
         <th>Имя</th>
         <th>Telegram ID</th>
+        <th>Должность</th>
+        <th>Договор</th>
         <th>Действия</th>
       </tr>
     </thead>
@@ -87,15 +103,19 @@
         <td>{{ u.surname }}</td>
         <td>{{ u.name }}</td>
         <td>{{ u.telegram_id }}</td>
-        <td>
-          <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn-edit">✏️ Редактировать</a>
-          <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
-            <button type="submit" class="btn-delete">❌ Удалить</button>
-          </form>
-          <form action="{{ url_for('toggle_archive_user', user_id=u.id) }}" method="POST" style="display:inline;">
-            <button type="submit" class="btn-archive">📦</button>
-          </form>
-        </td>
+        <td>{{ u.position }}</td>
+        <td>{{ u.contract_type or '-' }}</td>
+      <td style="white-space: nowrap;">
+        <form action="{{ url_for('edit_user', user_id=u._id) }}" method="GET" style="display:inline;">
+          <button type="submit" class="action-button edit-btn">✏️</button>
+        </form>
+        <form action="{{ url_for('delete_user', user_id=u._id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="action-button delete-btn">❌</button>
+        </form>
+        <form action="{{ url_for('toggle_archive_user', user_id=u._id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="action-button archive-btn">📦</button>
+        </form>
+      </td>
       </tr>
       {% endfor %}
       {% if not users %}
